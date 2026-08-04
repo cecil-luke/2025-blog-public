@@ -16,12 +16,12 @@
 		"enabled": true
 	},
 	"clockCard": {
-		"width": 232,
+		"width": 350,
 		"height": 132,
 		"offset": 92,
 		"order": 4,
-		"offsetX": 260,
-		"offsetY": -294,
+		"offsetX": 212,
+		"offsetY": -292,
 		"enabled": true
 	},
 	"calendarCard": {
@@ -33,11 +33,11 @@
 		"enabled": true
 	},
 	"musicCard": {
-		"width": 293,
+		"width": 350,
 		"height": 66,
 		"offset": 120,
 		"order": 6,
-		"offsetX": 249,
+		"offsetX": 224,
 		"offsetY": 176,
 		"enabled": true
 	},
@@ -45,8 +45,8 @@
 		"width": 315,
 		"height": 48,
 		"order": 6,
-		"offsetX": 181,
-		"offsetY": 283,
+		"offsetX": 237,
+		"offsetY": 274,
 		"enabled": true
 	},
 	"shareCard": {
@@ -85,8 +85,8 @@
 		"width": 54,
 		"height": 54,
 		"order": 8,
-		"offsetX": 456,
-		"offsetY": -368,
+		"offsetX": 483,
+		"offsetY": -367,
 		"enabled": true
 	},
 	"hatCard": {

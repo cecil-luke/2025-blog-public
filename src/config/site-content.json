@@ -5,7 +5,7 @@
 		"username": "Lukias"
 	},
 	"theme": {
-		"colorBrand": "#37C667",
+		"colorBrand": "#6FD142",
 		"colorPrimary": "#5B423F",
 		"colorSecondary": "#8b7667",
 		"colorBrandSecondary": "#eec25e",
@@ -15,14 +15,10 @@
 		"colorArticle": "#ffffffcc"
 	},
 	"backgroundColors": [
-		"#63C3B1",
-		"#4248BB",
-		"#E765D7",
-		"#0DDB69",
-		"#00f6a8",
-		"#1BA986",
-		"#10aff0",
-		"#e6f811"
+		"#A17AE4",
+		"#9B6DDA",
+		"#060871",
+		"#441CED"
 	],
 	"artImages": [
 		{
@@ -65,7 +61,7 @@
 	"clockShowSeconds": true,
 	"summaryInContent": true,
 	"isCachePem": false,
-	"hideEditButton": true,
+	"hideEditButton": false,
 	"enableCategories": true,
 	"currentHatIndex": 12,
 	"hatFlipped": false,
