@@ -5,20 +5,24 @@
 		"username": "Lukias"
 	},
 	"theme": {
-		"colorBrand": "#D95CF4",
-		"colorPrimary": "#334f52",
-		"colorSecondary": "#7b888e",
-		"colorBrandSecondary": "#1fc9e7",
-		"colorBg": "#eeeeee",
+		"colorBrand": "#37C667",
+		"colorPrimary": "#5B423F",
+		"colorSecondary": "#8b7667",
+		"colorBrandSecondary": "#eec25e",
+		"colorBg": "#d4e8f3",
 		"colorBorder": "#ffffff",
-		"colorCard": "#ffffff66",
+		"colorCard": "#ffffff99",
 		"colorArticle": "#ffffffcc"
 	},
 	"backgroundColors": [
-		"#6EBF2A",
-		"#BA69F2",
-		"#2B6BCA",
-		"#E19191"
+		"#63C3B1",
+		"#4248BB",
+		"#E765D7",
+		"#0DDB69",
+		"#00f6a8",
+		"#1BA986",
+		"#10aff0",
+		"#e6f811"
 	],
 	"artImages": [
 		{
@@ -34,7 +38,7 @@
 			"url": "/images/art/1c7b726fe720679b.jpg"
 		}
 	],
-	"currentArtImageId": "cat",
+	"currentArtImageId": "1c7b726fe720679b",
 	"backgroundImages": [
 		{
 			"id": "",
@@ -61,7 +65,7 @@
 	"clockShowSeconds": true,
 	"summaryInContent": true,
 	"isCachePem": false,
-	"hideEditButton": false,
+	"hideEditButton": true,
 	"enableCategories": true,
 	"currentHatIndex": 12,
 	"hatFlipped": false,
