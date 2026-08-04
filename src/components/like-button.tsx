@@ -13,6 +13,7 @@ type LikeButtonProps = {
 	delay?: number
 }
 
+// todo
 const ENDPOINT = 'https://blog-liker.yysuni1001.workers.dev/api/like'
 
 export default function LikeButton({ slug = 'yysuni', delay, className }: LikeButtonProps) {

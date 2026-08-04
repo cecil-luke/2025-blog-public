@@ -44,5 +44,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-#vscode
+# vscode
 .history/
+
+# intellij idea and config
+.idea
+pnpm-workspace.yaml
+skills-lock.json
+
+# AI Agent
+.agents
+.claude
