@@ -3,16 +3,16 @@
 		"width": 360,
 		"height": 200,
 		"order": 3,
-		"offsetX": null,
-		"offsetY": null,
+		"offsetX": -168,
+		"offsetY": -357,
 		"enabled": true
 	},
 	"hiCard": {
 		"width": 360,
 		"height": 288,
 		"order": 1,
-		"offsetX": null,
-		"offsetY": null,
+		"offsetX": -163,
+		"offsetY": -141,
 		"enabled": true
 	},
 	"clockCard": {
@@ -20,16 +20,16 @@
 		"height": 132,
 		"offset": 92,
 		"order": 4,
-		"offsetX": 220,
-		"offsetY": -309,
+		"offsetX": 260,
+		"offsetY": -294,
 		"enabled": true
 	},
 	"calendarCard": {
 		"width": 350,
 		"height": 286,
 		"order": 5,
-		"offsetX": 219,
-		"offsetY": -163,
+		"offsetX": 217,
+		"offsetY": -141,
 		"enabled": true
 	},
 	"musicCard": {
@@ -37,56 +37,56 @@
 		"height": 66,
 		"offset": 120,
 		"order": 6,
-		"offsetX": 229,
-		"offsetY": 153,
+		"offsetX": 249,
+		"offsetY": 176,
 		"enabled": true
 	},
 	"socialButtons": {
 		"width": 315,
 		"height": 48,
 		"order": 6,
-		"offsetX": -236,
-		"offsetY": 164,
+		"offsetX": 181,
+		"offsetY": 283,
 		"enabled": true
 	},
 	"shareCard": {
 		"width": 200,
 		"height": 180,
 		"order": 7,
-		"offsetX": -82,
-		"offsetY": 226,
+		"offsetX": -67,
+		"offsetY": 166,
 		"enabled": true
 	},
 	"articleCard": {
 		"width": 266,
 		"height": 160,
 		"order": 8,
-		"offsetX": -474,
-		"offsetY": 52,
+		"offsetX": -454,
+		"offsetY": 95,
 		"enabled": true
 	},
 	"writeButtons": {
 		"height": 42,
 		"width": 180,
 		"order": 8,
-		"offsetX": 224,
-		"offsetY": -364,
+		"offsetX": 217,
+		"offsetY": -362,
 		"enabled": true
 	},
 	"navCard": {
 		"width": 280,
 		"height": 434,
 		"order": 2,
-		"offsetX": -474,
-		"offsetY": -389,
+		"offsetX": -461,
+		"offsetY": -358,
 		"enabled": true
 	},
 	"likePosition": {
 		"width": 54,
 		"height": 54,
 		"order": 8,
-		"offsetX": 431,
-		"offsetY": -366,
+		"offsetX": 456,
+		"offsetY": -368,
 		"enabled": true
 	},
 	"hatCard": {
@@ -95,7 +95,7 @@
 		"order": 10,
 		"offsetX": -48,
 		"offsetY": -168,
-		"enabled": true
+		"enabled": false
 	},
 	"beianCard": {
 		"width": 200,

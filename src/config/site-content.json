@@ -5,7 +5,7 @@
 		"username": "Lukias"
 	},
 	"theme": {
-		"colorBrand": "#35bfab",
+		"colorBrand": "#D95CF4",
 		"colorPrimary": "#334f52",
 		"colorSecondary": "#7b888e",
 		"colorBrandSecondary": "#1fc9e7",
@@ -15,12 +15,10 @@
 		"colorArticle": "#ffffffcc"
 	},
 	"backgroundColors": [
-		"#EDDD62",
-		"#9EE7D1",
-		"#84D68A",
-		"#EDDD62",
-		"#88E6E5",
-		"#a7f3d0"
+		"#6EBF2A",
+		"#BA69F2",
+		"#2B6BCA",
+		"#E19191"
 	],
 	"artImages": [
 		{
@@ -61,13 +59,13 @@
 		}
 	],
 	"clockShowSeconds": true,
-	"summaryInContent": false,
+	"summaryInContent": true,
 	"isCachePem": false,
 	"hideEditButton": false,
-	"enableCategories": false,
-	"currentHatIndex": 3,
+	"enableCategories": true,
+	"currentHatIndex": 12,
 	"hatFlipped": false,
-	"enableChristmas": false,
+	"enableChristmas": true,
 	"beian": {
 		"text": "",
 		"link": ""
