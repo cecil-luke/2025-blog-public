@@ -38,7 +38,8 @@ export default function BlogPage() {
 	const [editableItems, setEditableItems] = useState<BlogIndexItem[]>([])
 	const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set())
 	const [saving, setSaving] = useState(false)
-	const [displayMode, setDisplayMode] = useState<DisplayMode>('year')
+	// 默认按月分组：组头带年份和月份，一眼看出文章时期；按年分组时一年文章过多、看不出时期
+	const [displayMode, setDisplayMode] = useState<DisplayMode>('month')
 	const [categoryModalOpen, setCategoryModalOpen] = useState(false)
 	const [categoryList, setCategoryList] = useState<string[]>([])
 	const [newCategory, setNewCategory] = useState('')
@@ -420,7 +421,15 @@ export default function BlogPage() {
 													<Check />
 												</span>
 											)}
-											<span className='text-secondary w-[44px] shrink-0 text-sm font-medium'>{dayjs(it.date).format('MM-DD')}</span>
+											{/* 分类模式的组头是分类名、不带年份，行内需显示完整日期；时间分组模式的组头已带年份，行内只显示 MM-DD
+												min-w + whitespace-nowrap 防长日期折行（数字为比例宽度时固定宽度会挤断），tabular-nums 保证各日期等宽对齐 */}
+											<span
+												className={cn(
+													'text-secondary shrink-0 text-sm font-medium whitespace-nowrap tabular-nums',
+													displayMode === 'category' ? 'min-w-[84px]' : 'min-w-[44px]'
+												)}>
+												{dayjs(it.date).format(displayMode === 'category' ? 'YYYY-MM-DD' : 'MM-DD')}
+											</span>
 
 											<div className='relative flex h-2 w-2 items-center justify-center'>
 												<div className='bg-secondary group-hover:bg-brand h-[5px] w-[5px] rounded-full transition-all group-hover:h-4'></div>
