@@ -1,12 +1,13 @@
 'use client'
 
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import dayjs from 'dayjs'
 import weekOfYear from 'dayjs/plugin/weekOfYear'
 import { motion } from 'motion/react'
 
 dayjs.extend(weekOfYear)
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { INIT_DELAY } from '@/consts'
 import ShortLineSVG from '@/svgs/short-line.svg'
@@ -24,7 +25,13 @@ import { CategoryModal } from './components/category-modal'
 
 type DisplayMode = 'day' | 'week' | 'month' | 'year' | 'category'
 
-export default function BlogPage() {
+const DISPLAY_MODES: DisplayMode[] = ['day', 'week', 'month', 'year', 'category']
+
+function isDisplayMode(value: string | null): value is DisplayMode {
+	return value !== null && (DISPLAY_MODES as string[]).includes(value)
+}
+
+function BlogArchive() {
 	const { items, loading } = useBlogIndex()
 	const { categories: categoriesFromServer } = useCategories()
 	const { isRead } = useReadArticles()
@@ -38,8 +45,22 @@ export default function BlogPage() {
 	const [editableItems, setEditableItems] = useState<BlogIndexItem[]>([])
 	const [selectedSlugs, setSelectedSlugs] = useState<Set<string>>(new Set())
 	const [saving, setSaving] = useState(false)
+	const router = useRouter()
+	const searchParams = useSearchParams()
 	// 默认按月分组：组头带年份和月份，一眼看出文章时期；按年分组时一年文章过多、看不出时期
-	const [displayMode, setDisplayMode] = useState<DisplayMode>('month')
+	// 初始模式从 URL ?mode= 读取：后退/前进/刷新时组件重建，靠 URL 还原分组状态
+	const [displayMode, setDisplayMode] = useState<DisplayMode>(() => {
+		const mode = searchParams.get('mode')
+		return isDisplayMode(mode) ? mode : 'month'
+	})
+	// 切换分组时同步写入 URL（?mode=），使浏览器后退/前进能还原到原分组；月为默认值，URL 保持干净
+	const changeDisplayMode = useCallback(
+		(mode: DisplayMode) => {
+			setDisplayMode(mode)
+			router.replace(mode === 'month' ? '/blog' : `/blog?mode=${mode}`, { scroll: false })
+		},
+		[router]
+	)
 	const [categoryModalOpen, setCategoryModalOpen] = useState(false)
 	const [categoryList, setCategoryList] = useState<string[]>([])
 	const [newCategory, setNewCategory] = useState('')
@@ -344,7 +365,7 @@ export default function BlogPage() {
 								key={option.value}
 								whileHover={{ scale: 1.05 }}
 								whileTap={{ scale: 0.95 }}
-								onClick={() => setDisplayMode(option.value as DisplayMode)}
+								onClick={() => changeDisplayMode(option.value as DisplayMode)}
 								className={cn(
 									'btn-rounded px-3 py-1.5 text-xs font-medium transition-all',
 									displayMode === option.value ? 'bg-brand text-white shadow-sm' : 'text-secondary hover:text-brand hover:bg-white/60'
@@ -548,5 +569,14 @@ export default function BlogPage() {
 				onAssignCategory={handleAssignCategory}
 			/>
 		</>
+	)
+}
+
+// useSearchParams 需要 Suspense 包裹（Next 构建要求）；fallback 与页面加载态一致，避免首帧空白
+export default function BlogPage() {
+	return (
+		<Suspense fallback={<div className='text-secondary py-6 text-center text-sm'>加载中...</div>}>
+			<BlogArchive />
+		</Suspense>
 	)
 }
