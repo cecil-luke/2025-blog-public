@@ -126,6 +126,7 @@ export default function NavCard() {
 					height={size.height}
 					x={position.x}
 					y={position.y}
+					noTapScale
 					className={clsx(form != 'full' && 'overflow-hidden', form === 'mini' && 'p-3', form === 'icons' && 'flex items-center gap-6 p-3')}>
 					{form === 'full' && siteContent.enableChristmas && (
 						<>

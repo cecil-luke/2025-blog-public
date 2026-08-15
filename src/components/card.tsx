@@ -13,10 +13,11 @@ interface Props {
 	height?: number
 	x: number
 	y: number
+	noTapScale?: boolean
 	children: React.ReactNode
 }
 
-export default function Card({ children, order, width, height, x, y, className }: Props) {
+export default function Card({ children, order, width, height, x, y, className, noTapScale }: Props) {
 	const { maxSM, init } = useSize()
 	let [show, setShow] = useState(false)
 	if (maxSM && init) order = 0
@@ -39,7 +40,7 @@ export default function Card({ children, order, width, height, x, y, className }
 				initial={{ opacity: 0, scale: 0.6, left: x, top: y, width, height }}
 				animate={{ opacity: 1, scale: 1, left: x, top: y, width, height }}
 				whileHover={{ scale: 1.05 }}
-				whileTap={{ scale: 0.95 }}>
+				{...(noTapScale ? {} : { whileTap: { scale: 0.95 } })}>
 				{children}
 			</motion.div>
 		)
