@@ -38,7 +38,8 @@ export function useBlogIndex() {
 export function useLatestBlog() {
 	const { items, loading, error } = useBlogIndex()
 
-	const latestBlog = items.length > 0 ? items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0] : null
+	// 拷贝后排序，避免原地 sort 污染 SWR 缓存数据
+	const latestBlog = items.length > 0 ? [...items].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0] : null
 
 	return {
 		blog: latestBlog,

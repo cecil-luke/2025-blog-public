@@ -3,9 +3,15 @@ import type { Tokens } from 'marked'
 
 export type TocItem = { id: string; text: string; level: number }
 
+export interface CodeBlockData {
+	code: string
+	html: string
+}
+
 export interface MarkdownRenderResult {
 	html: string
 	toc: TocItem[]
+	codeBlocks: CodeBlockData[]
 }
 
 export function slugify(text: string): string {
@@ -16,23 +22,57 @@ export function slugify(text: string): string {
 		.replace(/\s+/g, '-')
 }
 
-// Lazy load shiki to handle environments where it's not available (e.g., Cloudflare Workers)
-let shikiModule: typeof import('shiki') | null = null
-let shikiLoadAttempted = false
+/**
+ * 代码高亮语言白名单：全站文章实际使用的语言（scripts 扫描得出）+
+ * 少量常用兜底语言。相比加载全部语言，可显著减少客户端代码体积。
+ * 未列入的语言会走无高亮降级路径，不影响渲染。
+ */
+const SHIKI_LANGS = [
+	'text',
+	'bash',
+	'sh',
+	'shell',
+	'js',
+	'javascript',
+	'ts',
+	'typescript',
+	'tsx',
+	'jsx',
+	'glsl',
+	'html',
+	'css',
+	'json',
+	'md',
+	'markdown',
+	'xml',
+	'python',
+	'yaml',
+	'yml',
+	'diff',
+	'plaintext'
+]
 
-async function loadShiki() {
-	if (shikiLoadAttempted) {
-		return shikiModule
-	}
-	shikiLoadAttempted = true
+interface ShikiHighlighter {
+	codeToHtml: (code: string, options: { lang: string; theme: string }) => Promise<string>
+}
 
-	try {
-		shikiModule = await import('shiki')
-		return shikiModule
-	} catch (error) {
-		console.warn('Failed to load shiki module:', error)
-		return null
+// Lazy load shiki（白名单语言），单例复用 highlighter 实例
+let shikiPromise: Promise<ShikiHighlighter | null> | null = null
+
+function loadShiki(): Promise<ShikiHighlighter | null> {
+	if (!shikiPromise) {
+		shikiPromise = (async () => {
+			try {
+				const { createHighlighter } = await import('shiki')
+				const highlighter = await createHighlighter({ themes: ['one-light'], langs: SHIKI_LANGS })
+				return highlighter as unknown as ShikiHighlighter
+			} catch (error) {
+				console.warn('Failed to load shiki module:', error)
+				return null
+			}
+		})()
 	}
+	return shikiPromise
 }
 
 // Lazy load katex to handle environments where it's not available (e.g., Cloudflare Workers)
@@ -56,11 +96,25 @@ async function loadKatex() {
 	}
 }
 
+function escapeHtml(value: string): string {
+	return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+}
+
+// 渲染结果缓存：同内容不重复走 lexer/shiki/katex（编辑预览与文章页共用此链路）
+const RENDER_CACHE_LIMIT = 40
+const renderCache = new Map<string, MarkdownRenderResult>()
+
 export async function renderMarkdown(markdown: string): Promise<MarkdownRenderResult> {
-	// Load optional renderers first so they apply on the FIRST lex/parse pass.
-	// (If we lex before registering extensions, math tokens won't ever be produced on a cold refresh.)
-	const codeBlockMap = new Map<string, { html: string; original: string }>()
-	const [shiki, katex] = await Promise.all([loadShiki(), loadKatex()])
+	const cached = renderCache.get(markdown)
+	if (cached) return cached
+
+	// 按需加载：无代码块时不加载 shiki，无 $ 符号时不加载 katex
+	const hasCodeFence = /\`\`\`|~~~/.test(markdown)
+	const hasMathDollar = markdown.includes('$')
+
+	const codeBlockMap = new Map<string, { html: string; original: string; index: number }>()
+	const codeBlocks: CodeBlockData[] = []
+	const [shiki, katex] = await Promise.all([hasCodeFence ? loadShiki() : Promise.resolve(null), hasMathDollar ? loadKatex() : Promise.resolve(null)])
 
 	// Render HTML with heading ids
 	const renderer = new marked.Renderer()
@@ -74,18 +128,12 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 		// Check if this code block was pre-processed
 		const codeData = codeBlockMap.get(token.text)
 		if (codeData) {
-			// Add data-code attribute with original code for copy functionality
-			// Escape HTML entities for attribute value
-			const escapedCode = codeData.original.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-			if (codeData.html) {
-				// Shiki highlighted code
-				return `<pre data-code="${escapedCode}">${codeData.html}</pre>`
-			}
-			// Fallback for failed highlighting
-			return `<pre data-code="${escapedCode}"><code>${codeData.original}</code></pre>`
+			// 输出 data-code-index 占位，代码本体与高亮 HTML 放在 codeBlocks 数组中返回，
+			// 避免把整段代码塞进 HTML 属性再转义/反转义（原实现易出错且慢）
+			return `<pre data-code-index="${codeData.index}">${codeData.html}</pre>`
 		}
 		// Fallback to default (inline code, not code block)
-		return `<code>${token.text}</code>`
+		return `<code>${escapeHtml(token.text)}</code>`
 	}
 
 	renderer.listitem = (token: Tokens.ListItem) => {
@@ -205,29 +253,38 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 		if (token.type === 'code') {
 			const codeToken = token as Tokens.Code
 			const originalCode = codeToken.text
-			const key = `__SHIKI_CODE_${codeBlockMap.size}__`
+			const index = codeBlocks.length
+			let html = ''
 
 			if (shiki) {
 				try {
-					const html = await shiki.codeToHtml(originalCode, {
-						lang: codeToken.lang || 'text',
+					// 'svg' 不在白名单中，映射到语法相近的 'xml' 避免整体降级
+					const lang = codeToken.lang === 'svg' ? 'xml' : codeToken.lang || 'text'
+					html = await shiki.codeToHtml(originalCode, {
+						lang,
 						theme: 'one-light'
 					})
-					codeBlockMap.set(key, { html, original: originalCode })
-					codeToken.text = key
 				} catch {
-					// Keep original if highlighting fails
-					codeBlockMap.set(key, { html: '', original: originalCode })
-					codeToken.text = key
+					// Keep original if highlighting fails (e.g. 语言不在白名单)
+					html = ''
 				}
-			} else {
-				// Fallback when shiki is not available
-				codeBlockMap.set(key, { html: '', original: originalCode })
-				codeToken.text = key
 			}
+			// Fallback when shiki is not available or highlighting failed
+			if (!html) {
+				html = `<code>${escapeHtml(originalCode)}</code>`
+			}
+			codeBlocks.push({ code: originalCode, html })
+			codeBlockMap.set(`__SHIKI_CODE_${index}__`, { html, original: originalCode, index })
+			codeToken.text = `__SHIKI_CODE_${index}__`
 		}
 	}
 	const html = (marked.parser(tokens) as string) || ''
 
-	return { html, toc }
+	const result: MarkdownRenderResult = { html, toc, codeBlocks }
+	if (renderCache.size >= RENDER_CACHE_LIMIT) {
+		const firstKey = renderCache.keys().next().value
+		if (firstKey !== undefined) renderCache.delete(firstKey)
+	}
+	renderCache.set(markdown, result)
+	return result
 }

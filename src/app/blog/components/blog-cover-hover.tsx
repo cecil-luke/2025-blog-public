@@ -91,7 +91,7 @@ export function BlogCoverHoverPreview({ preview, position }: BlogCoverHoverPrevi
 						left: position.x + PREVIEW_OFFSET_PX,
 						top: position.y + PREVIEW_OFFSET_PX
 					}}>
-					<img src={preview.src} alt='' className='w-full rounded-xl object-cover' draggable={false} />
+					<img src={preview.src} alt='' loading='lazy' decoding='async' className='w-full rounded-xl object-cover' draggable={false} />
 				</motion.div>
 			)}
 		</AnimatePresence>

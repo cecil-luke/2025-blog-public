@@ -55,3 +55,9 @@ skills-lock.json
 # AI Agent
 .agents
 .claude
+/AGENTS.md
+/CONTEXT.md
+/CLAUDE.md
+/docs/repository-guide.md
+/docs/agents/domain.md
+/docs/agents/issue-tracker.md

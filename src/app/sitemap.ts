@@ -5,13 +5,8 @@ import type { BlogIndexItem } from '@/app/blog/types'
 export const dynamic = 'force-static'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-	// 域名配置：
-	// 1. 优先使用 SITE_URL (你在 Vercel 手动设置的正式域名)
-	// 2. 其次尝试 VERCEL_URL (Vercel 自动生成的预览域名，通常不带 https://)
-	// 3. 最后回退到本地开发地址
-	const baseUrl = process.env.SITE_URL ? process.env.SITE_URL : process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'
-
-	console.log(`[Sitemap] Generating for: ${baseUrl}`)
+	// 站点正式域名，可用环境变量 NEXT_PUBLIC_SITE_URL 覆盖
+	const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://lukias-blog.cc.cd').replace(/\/$/, '')
 
 	let posts: BlogIndexItem[] = blogIndex
 

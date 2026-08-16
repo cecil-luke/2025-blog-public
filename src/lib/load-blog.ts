@@ -18,9 +18,11 @@ export async function loadBlog(slug: string): Promise<LoadedBlog> {
 		throw new Error('Slug is required')
 	}
 
+	// 并行加载 config.json 与 index.md，减少串行等待
+	const [configRes, mdRes] = await Promise.all([fetch(`/blogs/${encodeURIComponent(slug)}/config.json`), fetch(`/blogs/${encodeURIComponent(slug)}/index.md`)])
+
 	// Load config.json
 	let config: BlogConfig = {}
-	const configRes = await fetch(`/blogs/${encodeURIComponent(slug)}/config.json`)
 	if (configRes.ok) {
 		try {
 			config = await configRes.json()
@@ -30,7 +32,6 @@ export async function loadBlog(slug: string): Promise<LoadedBlog> {
 	}
 
 	// Load index.md
-	const mdRes = await fetch(`/blogs/${encodeURIComponent(slug)}/index.md`)
 	if (!mdRes.ok) {
 		throw new Error('Blog not found')
 	}

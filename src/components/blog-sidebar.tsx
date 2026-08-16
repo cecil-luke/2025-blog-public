@@ -32,7 +32,7 @@ export function BlogSidebar({ cover, summary, toc, slug }: BlogSidebarProps) {
 					animate={{ opacity: 1, scale: 1 }}
 					transition={{ delay: INIT_DELAY + ANIMATION_DELAY * 1 }}
 					className='bg-card w-full rounded-xl border p-3'>
-					<img src={cover} alt='cover' className='h-auto w-full rounded-xl border object-cover' />
+					<img src={cover} alt='cover' loading='lazy' decoding='async' className='h-auto w-full rounded-xl border object-cover' />
 				</motion.div>
 			)}
 

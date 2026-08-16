@@ -37,7 +37,7 @@ const htmlStyle = {
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
 	return (
-		<html lang='en' suppressHydrationWarning style={htmlStyle}>
+		<html lang='zh-CN' suppressHydrationWarning style={htmlStyle}>
 			<Head />
 
 			<body>

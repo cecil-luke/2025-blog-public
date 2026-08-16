@@ -5,8 +5,8 @@ import siteContent from '@/config/site-content.json'
 import blogIndex from '@/../public/blogs/index.json'
 import type { BlogIndexItem } from '@/app/blog/types'
 
-// todo 改成自己的域名，待后续购买域名
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.yysuni.com'
+// 站点正式域名，可用环境变量 NEXT_PUBLIC_SITE_URL 覆盖
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://lukias-blog.cc.cd'
 const FEED_PATH = '/rss.xml'
 const SITE_ORIGIN = SITE_URL.replace(/\/$/, '')
 const FEED_URL = `${SITE_ORIGIN}${FEED_PATH}`
