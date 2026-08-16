@@ -61,3 +61,7 @@ skills-lock.json
 /docs/repository-guide.md
 /docs/agents/domain.md
 /docs/agents/issue-tracker.md
+
+# scratch: 本地开发记录(不提交;已提交的历史记录不受影响)
+.scratch/string-wall/
+

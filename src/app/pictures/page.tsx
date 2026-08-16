@@ -5,6 +5,7 @@ import { motion } from 'motion/react'
 import { toast } from 'sonner'
 import initialList from './list.json'
 import { RandomLayout } from './components/random-layout'
+import { StringWall } from './components/string-wall'
 import UploadDialog from './components/upload-dialog'
 import { pushPictures } from './services/push-pictures'
 import { useAuthStore } from '@/hooks/use-auth'
@@ -29,6 +30,16 @@ export default function Page() {
 	const [imageItems, setImageItems] = useState<Map<string, ImageItem>>(new Map())
 	const keyInputRef = useRef<HTMLInputElement>(null)
 	const router = useRouter()
+	// 桌面端用串线墙、移动端沿用散落墙(与编辑按钮的 max-sm 断点一致)
+	const [isDesktop, setIsDesktop] = useState<boolean | null>(null)
+
+	useEffect(() => {
+		const mq = window.matchMedia('(min-width: 640px)')
+		const update = () => setIsDesktop(mq.matches)
+		update()
+		mq.addEventListener('change', update)
+		return () => mq.removeEventListener('change', update)
+	}, [])
 
 	const { isAuth, setPrivateKey } = useAuthStore()
 	const { siteContent } = useConfigStore()
@@ -231,7 +242,11 @@ export default function Page() {
 				}}
 			/>
 
-			<RandomLayout pictures={pictures} isEditMode={isEditMode} onDeleteSingle={handleDeleteSingleImage} onDeleteGroup={handleDeleteGroup} />
+			{isDesktop === null ? null : isDesktop ? (
+				<StringWall pictures={pictures} isEditMode={isEditMode} onDeleteSingle={handleDeleteSingleImage} />
+			) : (
+				<RandomLayout pictures={pictures} isEditMode={isEditMode} onDeleteSingle={handleDeleteSingleImage} onDeleteGroup={handleDeleteGroup} />
+			)}
 
 			{pictures.length === 0 && (
 				<div className='text-secondary flex min-h-screen items-center justify-center text-center text-sm'>
