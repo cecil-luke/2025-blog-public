@@ -119,6 +119,107 @@ const saveOffset = (url: string, offset: { x: number; y: number }) => {
 	}
 }
 
+interface SequencerItem {
+	id: number
+	startLoad: () => void
+	reveal: () => void
+	loading: boolean
+	loaded: boolean
+	revealed: boolean
+	dead: boolean
+}
+
+// 画廊调度器:两段式流水线
+// 1. 预加载:最多 maxConcurrent 张同时下载,按注册顺序依次放行,提前把后面的图片加载好
+// 2. 展示:严格按注册顺序逐张放行,每张间隔至少 minGapMs,且必须等图片加载完成才展示
+//    上一张展示后,下一张才会开始 —— 避免多张同时弹出、避免出现还没加载好的空框
+class GallerySequencer {
+	private items: SequencerItem[] = []
+	private activeLoads = 0
+	private cursor = 0
+	private lastRevealAt = 0
+	private revealTimer: ReturnType<typeof setTimeout> | null = null
+	readonly maxConcurrent = 6
+	readonly minGapMs = 200
+
+	register(startLoad: () => void, reveal: () => void): number {
+		const id = this.items.length
+		this.items.push({ id, startLoad, reveal, loading: false, loaded: false, revealed: false, dead: false })
+		this.pump()
+		return id
+	}
+
+	unregister(id: number) {
+		const item = this.items[id]
+		if (!item) return
+		// 组件卸载:若还在下载,释放预加载名额
+		if (item.loading && !item.loaded) {
+			this.activeLoads--
+		}
+		item.dead = true
+		this.pump()
+	}
+
+	markLoaded(id: number) {
+		const item = this.items[id]
+		if (!item || item.dead || item.loaded) return
+		item.loaded = true
+		if (item.loading) {
+			item.loading = false
+			this.activeLoads--
+		}
+		this.pump()
+	}
+
+	private pump() {
+		this.pumpLoads()
+		if (this.revealTimer) return
+		this.pumpReveals()
+	}
+
+	private pumpLoads() {
+		for (const item of this.items) {
+			if (this.activeLoads >= this.maxConcurrent) return
+			if (item.dead || item.loaded || item.loading) continue
+			item.loading = true
+			this.activeLoads++
+			item.startLoad()
+		}
+	}
+
+	private pumpReveals() {
+		while (this.cursor < this.items.length) {
+			const item = this.items[this.cursor]
+
+			// 已删除的图片直接跳过
+			if (item.dead) {
+				this.cursor++
+				continue
+			}
+
+			// 还没加载完:等 markLoaded 触发后再试
+			if (!item.loaded) return
+
+			// 保持每张之间的展示节奏
+			const wait = this.lastRevealAt + this.minGapMs - performance.now()
+			if (wait > 0) {
+				this.revealTimer = setTimeout(() => {
+					this.revealTimer = null
+					this.pumpReveals()
+				}, wait)
+				return
+			}
+
+			item.revealed = true
+			item.reveal()
+			this.lastRevealAt = performance.now()
+			this.cursor++
+		}
+	}
+}
+
+const gallerySequencer = new GallerySequencer()
+
 const FloatingImage = ({
 	url,
 	index,
@@ -137,13 +238,22 @@ const FloatingImage = ({
 	const bodyRef = useRef(document.body)
 	const mouseDownTimeRef = useRef<number | null>(null)
 	const [zIndex, setZIndex] = useState(index)
-	const [show, setShow] = useState(false)
+	const [srcReady, setSrcReady] = useState(false)
+	const [visible, setVisible] = useState(false)
+	const sequencerIdRef = useRef<number | null>(null)
 	const [dragOffset, setDragOffset] = useState(() => loadSavedOffset(url))
 
+	// 注册到画廊调度器:后台预加载 + 按顺序逐张展示
 	useEffect(() => {
-		setTimeout(() => {
-			setShow(true)
-		}, 200 * index)
+		const id = gallerySequencer.register(
+			() => setSrcReady(true),
+			() => setVisible(true)
+		)
+		sequencerIdRef.current = id
+		return () => {
+			gallerySequencer.unregister(id)
+			sequencerIdRef.current = null
+		}
 	}, [])
 
 	const [originalSize, setOriginalSize] = useState<OriginalSize | null>(null)
@@ -190,7 +300,7 @@ const FloatingImage = ({
 	const [isZoomed, setIsZoomed] = useState(false)
 	const dragStartOffsetRef = useRef({ x: 0, y: 0 })
 
-	if (!position || !show) return null
+	if (!position) return null
 
 	return (
 		<>
@@ -207,7 +317,7 @@ const FloatingImage = ({
 				/>
 			)}
 			<motion.div
-				drag={!isZoomed}
+				drag={!isZoomed && visible}
 				dragConstraints={bodyRef}
 				dragMomentum={false}
 				onDragStart={() => {
@@ -224,7 +334,7 @@ const FloatingImage = ({
 					if (mouseDownTimeRef.current !== null) {
 						const duration = event.timeStamp - mouseDownTimeRef.current
 						if (duration <= 150) {
-							if (!isZoomed) {
+							if (!isZoomed && visible) {
 								setIsZoomed(true)
 							} else if (maxSM) {
 								setIsZoomed(false)
@@ -244,63 +354,65 @@ const FloatingImage = ({
 					}
 				}}
 				initial={{
-					width: displaySize.width,
-					height: displaySize.height,
-					borderWidth: 8,
-					zIndex,
-					left: centerX + position.x,
-					top: centerY + position.y,
-					rotate: position.rotation,
-					scale: 0.6,
 					opacity: 0,
+					scale: 0.6,
+					rotate: position.rotation,
 					x: dragOffset.x,
-					y: dragOffset.y
+					y: dragOffset.y,
+					zIndex
 				}}
 				animate={
 					isZoomed
 						? {
 								zIndex: TOP_Z_INDEX,
-								left: centerX,
-								top: centerY,
 								rotate: 0,
 								scale: 1,
 								opacity: 1,
 								x: 0,
-								y: 0,
-								width: zoomedSize.width,
-								height: zoomedSize.height,
-								borderWidth: maxSM ? 12 : 24
+								y: 0
 							}
 						: {
 								zIndex,
-								scale: 1,
-								opacity: 1,
-								left: centerX + position.x,
-								top: centerY + position.y,
 								rotate: position.rotation,
+								scale: visible ? 1 : 0.6,
+								opacity: visible ? 1 : 0,
 								x: dragOffset.x,
-								y: dragOffset.y,
-								width: displaySize.width,
-								height: displaySize.height,
-								borderWidth: 8
+								y: dragOffset.y
 							}
 				}
+				style={{
+					left: isZoomed ? centerX : centerX + position.x,
+					top: isZoomed ? centerY : centerY + position.y,
+					width: isZoomed ? zoomedSize.width : displaySize.width,
+					height: isZoomed ? zoomedSize.height : displaySize.height,
+					borderWidth: isZoomed ? (maxSM ? 12 : 24) : 8
+				}}
 				transition={{ type: 'tween', ease: 'easeOut' }}
 				className={cn(
 					'pointer-events-auto absolute origin-center -translate-1/2 cursor-pointer shadow-xl transition-[scale]',
 					!isEditMode && !isZoomed && 'hover:scale-105'
 				)}>
-				<motion.img
-					src={url}
-					loading='lazy'
-					decoding='async'
-					onLoad={event => {
-						const img = event.currentTarget
-						setOriginalSize({ width: img.naturalWidth, height: img.naturalHeight })
-					}}
-					draggable={false}
-					className={cn('h-full w-full object-cover select-none')}
-				/>
+				{srcReady && (
+					<img
+						src={url}
+						decoding='async'
+						onLoad={event => {
+							const img = event.currentTarget
+							setOriginalSize({ width: img.naturalWidth, height: img.naturalHeight })
+							if (sequencerIdRef.current !== null) {
+								gallerySequencer.markLoaded(sequencerIdRef.current)
+							}
+						}}
+						onError={() => {
+							// 加载失败也推进链条,避免卡住后面的图片
+							if (sequencerIdRef.current !== null) {
+								gallerySequencer.markLoaded(sequencerIdRef.current)
+							}
+						}}
+						draggable={false}
+						className='h-full w-full object-cover select-none'
+					/>
+				)}
 				{isEditMode && !isZoomed && (
 					<motion.button
 						initial={{ opacity: 0, scale: 0.8 }}
@@ -347,7 +459,7 @@ const FloatingImage = ({
 // 使用 ref 存储稳定的位置映射
 const positionCacheRef = new Map<string, PositionedItem>()
 const getStablePosition = (uniqueId: string, width: number, height: number): PositionedItem => {
-	// 如果已有缓存，直接返回
+	// 如果已有缓存,直接返回
 	if (positionCacheRef.has(uniqueId)) {
 		return positionCacheRef.get(uniqueId)!
 	}
@@ -364,7 +476,7 @@ const getStablePosition = (uniqueId: string, width: number, height: number): Pos
 	const maxRadius = Math.min(width, height) / 2 - 100
 	const goldenAngle = Math.PI * (3 - Math.sqrt(5))
 
-	// 使用稳定索引来计算位置，而不是数组索引
+	// 使用稳定索引来计算位置,而不是数组索引
 	const t = (stableIndex % 1000) / 1000
 	const radius = Math.pow(t, 0.8) * maxRadius
 	const angle = stableIndex * goldenAngle
@@ -372,7 +484,7 @@ const getStablePosition = (uniqueId: string, width: number, height: number): Pos
 	const baseX = radius * Math.cos(angle)
 	const baseY = radius * Math.sin(angle)
 
-	// 使用 uniqueId 生成稳定的 jitter，确保每次都是相同的位置
+	// 使用 uniqueId 生成稳定的 jitter,确保每次都是相同的位置
 	const jitterSeed = Math.abs(hash) % 1000
 	const jitterRadius = 12
 	const jitterX = (jitterSeed % (jitterRadius * 2)) - jitterRadius

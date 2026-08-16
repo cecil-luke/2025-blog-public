@@ -1,0 +1,308 @@
+{
+  "profile": "fast",
+  "expectedImages": 117,
+  "requestCount": 117,
+  "finishedCount": 117,
+  "lastImageLoadedMs": 1560,
+  "lastImageRevealedMs": 25054,
+  "firstImageLoadedMs": 1406,
+  "totalMegabytes": 27.02,
+  "maxInFlightObserved": 6,
+  "maxVisJumpPerSample": 1,
+  "samples": [
+    {
+      "t": 189,
+      "imgs": 0,
+      "complete": 0,
+      "vis": 0,
+      "inFlight": 0
+    },
+    {
+      "t": 801,
+      "imgs": 0,
+      "complete": 0,
+      "vis": 0,
+      "inFlight": 0
+    },
+    {
+      "t": 1406,
+      "imgs": 22,
+      "complete": 17,
+      "vis": 0,
+      "inFlight": 6
+    },
+    {
+      "t": 2014,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 2,
+      "inFlight": 0
+    },
+    {
+      "t": 2621,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 5,
+      "inFlight": 0
+    },
+    {
+      "t": 3228,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 8,
+      "inFlight": 0
+    },
+    {
+      "t": 3834,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 12,
+      "inFlight": 0
+    },
+    {
+      "t": 4441,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 15,
+      "inFlight": 0
+    },
+    {
+      "t": 5047,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 18,
+      "inFlight": 0
+    },
+    {
+      "t": 5654,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 21,
+      "inFlight": 0
+    },
+    {
+      "t": 6261,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 24,
+      "inFlight": 0
+    },
+    {
+      "t": 6867,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 27,
+      "inFlight": 0
+    },
+    {
+      "t": 7474,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 30,
+      "inFlight": 0
+    },
+    {
+      "t": 8080,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 33,
+      "inFlight": 0
+    },
+    {
+      "t": 8687,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 36,
+      "inFlight": 0
+    },
+    {
+      "t": 9292,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 39,
+      "inFlight": 0
+    },
+    {
+      "t": 9898,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 42,
+      "inFlight": 0
+    },
+    {
+      "t": 10504,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 45,
+      "inFlight": 0
+    },
+    {
+      "t": 11111,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 48,
+      "inFlight": 0
+    },
+    {
+      "t": 11717,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 51,
+      "inFlight": 0
+    },
+    {
+      "t": 12321,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 54,
+      "inFlight": 0
+    },
+    {
+      "t": 12927,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 57,
+      "inFlight": 0
+    },
+    {
+      "t": 13533,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 60,
+      "inFlight": 0
+    },
+    {
+      "t": 14140,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 63,
+      "inFlight": 0
+    },
+    {
+      "t": 14744,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 66,
+      "inFlight": 0
+    },
+    {
+      "t": 15350,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 69,
+      "inFlight": 0
+    },
+    {
+      "t": 15956,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 72,
+      "inFlight": 0
+    },
+    {
+      "t": 16563,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 75,
+      "inFlight": 0
+    },
+    {
+      "t": 17171,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 78,
+      "inFlight": 0
+    },
+    {
+      "t": 17776,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 81,
+      "inFlight": 0
+    },
+    {
+      "t": 18383,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 84,
+      "inFlight": 0
+    },
+    {
+      "t": 18988,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 87,
+      "inFlight": 0
+    },
+    {
+      "t": 19594,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 90,
+      "inFlight": 0
+    },
+    {
+      "t": 20200,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 93,
+      "inFlight": 0
+    },
+    {
+      "t": 20806,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 96,
+      "inFlight": 0
+    },
+    {
+      "t": 21412,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 99,
+      "inFlight": 0
+    },
+    {
+      "t": 22019,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 102,
+      "inFlight": 0
+    },
+    {
+      "t": 22625,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 105,
+      "inFlight": 0
+    },
+    {
+      "t": 23232,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 108,
+      "inFlight": 0
+    },
+    {
+      "t": 23838,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 111,
+      "inFlight": 0
+    },
+    {
+      "t": 24447,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 114,
+      "inFlight": 0
+    },
+    {
+      "t": 25054,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 117,
+      "inFlight": 0
+    }
+  ]
+}

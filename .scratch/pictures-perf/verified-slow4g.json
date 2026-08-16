@@ -1,0 +1,245 @@
+{
+  "profile": "slow4g",
+  "expectedImages": 117,
+  "requestCount": 117,
+  "finishedCount": 117,
+  "lastImageLoadedMs": 63791,
+  "lastImageRevealedMs": 64794,
+  "firstImageLoadedMs": 6175,
+  "totalMegabytes": 27.02,
+  "maxInFlightObserved": 6,
+  "maxVisJumpPerSample": 3,
+  "samples": [
+    {
+      "t": 660,
+      "imgs": 0,
+      "complete": 0,
+      "vis": 0,
+      "inFlight": 0
+    },
+    {
+      "t": 2668,
+      "imgs": 0,
+      "complete": 0,
+      "vis": 0,
+      "inFlight": 0
+    },
+    {
+      "t": 4670,
+      "imgs": 6,
+      "complete": 0,
+      "vis": 0,
+      "inFlight": 6
+    },
+    {
+      "t": 6676,
+      "imgs": 10,
+      "complete": 4,
+      "vis": 0,
+      "inFlight": 6
+    },
+    {
+      "t": 8681,
+      "imgs": 13,
+      "complete": 7,
+      "vis": 4,
+      "inFlight": 6
+    },
+    {
+      "t": 10682,
+      "imgs": 20,
+      "complete": 14,
+      "vis": 12,
+      "inFlight": 6
+    },
+    {
+      "t": 12687,
+      "imgs": 22,
+      "complete": 16,
+      "vis": 14,
+      "inFlight": 6
+    },
+    {
+      "t": 14688,
+      "imgs": 26,
+      "complete": 20,
+      "vis": 20,
+      "inFlight": 6
+    },
+    {
+      "t": 16695,
+      "imgs": 29,
+      "complete": 23,
+      "vis": 20,
+      "inFlight": 6
+    },
+    {
+      "t": 18698,
+      "imgs": 30,
+      "complete": 24,
+      "vis": 23,
+      "inFlight": 6
+    },
+    {
+      "t": 20704,
+      "imgs": 33,
+      "complete": 27,
+      "vis": 23,
+      "inFlight": 6
+    },
+    {
+      "t": 22708,
+      "imgs": 36,
+      "complete": 30,
+      "vis": 29,
+      "inFlight": 6
+    },
+    {
+      "t": 24711,
+      "imgs": 40,
+      "complete": 34,
+      "vis": 30,
+      "inFlight": 6
+    },
+    {
+      "t": 26714,
+      "imgs": 43,
+      "complete": 37,
+      "vis": 30,
+      "inFlight": 6
+    },
+    {
+      "t": 28719,
+      "imgs": 45,
+      "complete": 39,
+      "vis": 38,
+      "inFlight": 6
+    },
+    {
+      "t": 30722,
+      "imgs": 51,
+      "complete": 45,
+      "vis": 44,
+      "inFlight": 6
+    },
+    {
+      "t": 32725,
+      "imgs": 55,
+      "complete": 49,
+      "vis": 49,
+      "inFlight": 6
+    },
+    {
+      "t": 34730,
+      "imgs": 58,
+      "complete": 52,
+      "vis": 49,
+      "inFlight": 6
+    },
+    {
+      "t": 36733,
+      "imgs": 63,
+      "complete": 57,
+      "vis": 54,
+      "inFlight": 6
+    },
+    {
+      "t": 38737,
+      "imgs": 68,
+      "complete": 62,
+      "vis": 57,
+      "inFlight": 6
+    },
+    {
+      "t": 40741,
+      "imgs": 70,
+      "complete": 64,
+      "vis": 63,
+      "inFlight": 6
+    },
+    {
+      "t": 42745,
+      "imgs": 74,
+      "complete": 68,
+      "vis": 66,
+      "inFlight": 5
+    },
+    {
+      "t": 44747,
+      "imgs": 78,
+      "complete": 72,
+      "vis": 70,
+      "inFlight": 6
+    },
+    {
+      "t": 46751,
+      "imgs": 82,
+      "complete": 76,
+      "vis": 74,
+      "inFlight": 6
+    },
+    {
+      "t": 48758,
+      "imgs": 86,
+      "complete": 80,
+      "vis": 78,
+      "inFlight": 6
+    },
+    {
+      "t": 50760,
+      "imgs": 90,
+      "complete": 84,
+      "vis": 83,
+      "inFlight": 6
+    },
+    {
+      "t": 52765,
+      "imgs": 96,
+      "complete": 90,
+      "vis": 86,
+      "inFlight": 6
+    },
+    {
+      "t": 54771,
+      "imgs": 103,
+      "complete": 97,
+      "vis": 86,
+      "inFlight": 6
+    },
+    {
+      "t": 56775,
+      "imgs": 105,
+      "complete": 99,
+      "vis": 93,
+      "inFlight": 6
+    },
+    {
+      "t": 58777,
+      "imgs": 109,
+      "complete": 103,
+      "vis": 100,
+      "inFlight": 6
+    },
+    {
+      "t": 60783,
+      "imgs": 112,
+      "complete": 106,
+      "vis": 105,
+      "inFlight": 6
+    },
+    {
+      "t": 62787,
+      "imgs": 117,
+      "complete": 111,
+      "vis": 108,
+      "inFlight": 6
+    },
+    {
+      "t": 64794,
+      "imgs": 117,
+      "complete": 117,
+      "vis": 117,
+      "inFlight": 0
+    }
+  ]
+}
