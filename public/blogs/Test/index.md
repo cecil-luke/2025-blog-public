@@ -20,7 +20,12 @@
 - 减少用户等待焦虑
 - 符合现代Web应用的加载标准
 
+# 接入giscus评论系统
+- **文章评论（giscus）**：接入独立公开评论仓库 `cecil-luke/2025-blog-public-comments` 的 GitHub Discussions；文章以不可变 slug 的 `blog:<slug>` 精确映射，访客主动点击后才加载 iframe，使用 `zh-CN` 与内置 `noborder_light` 主题；隐藏文章和编辑器预览不显示评论区，且关闭 giscus reaction。
+
 # 图片列表
+![](/blogs/Test/f8e9d912651bd95c.webp)
+
 ![](/blogs/Test/a30f19f989781e42.webp)
 
 ![](/blogs/Test/77ba9a4188786e15.webp)
@@ -29,13 +34,10 @@
 
 ![](/blogs/Test/a74a44c4c6b340a5.webp)
 
-![](/blogs/Test/7173588c1a78d6c9.webp)
-
 ![](/blogs/Test/0441fa13b96b663a.webp)
 
 ![](/blogs/Test/c668c9954d40b063.webp)
 
 ![](/blogs/Test/81b2e9d79473491e.webp)
-
 
 

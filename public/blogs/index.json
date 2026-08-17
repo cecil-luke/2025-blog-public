@@ -3,10 +3,11 @@
     "slug": "Test",
     "title": "博客文章优化-测试",
     "tags": [
-      "Test"
+      "Test",
+      "Giscus"
     ],
     "date": "2026-08-16T14:27",
-    "summary": "1.测试图片懒加载。\n2.测试加载状态反馈。",
+    "summary": "1.测试图片懒加载。\n2.测试加载状态反馈。\n3.Giscus评论系统测试",
     "cover": "/blogs/Test/f8e9d912651bd95c.webp",
     "hidden": false,
     "category": ""
