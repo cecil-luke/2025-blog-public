@@ -78,6 +78,7 @@ export default function Page() {
 				summary={blog.config.summary}
 				cover={blog.cover ? (blog.cover.startsWith('http') ? blog.cover : `${origin}${blog.cover}`) : undefined}
 				slug={slug}
+				showComments={!blog.config.hidden}
 			/>
 
 			<motion.button

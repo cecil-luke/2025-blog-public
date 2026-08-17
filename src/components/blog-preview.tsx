@@ -5,6 +5,7 @@ import { INIT_DELAY } from '@/consts'
 import { useMarkdownRender } from '@/hooks/use-markdown-render'
 import { useSize } from '@/hooks/use-size'
 import { BlogSidebar } from '@/components/blog-sidebar'
+import { GiscusComments } from '@/components/giscus-comments'
 import { useConfigStore } from '@/app/(home)/stores/config-store'
 
 type BlogPreviewProps = {
@@ -15,9 +16,10 @@ type BlogPreviewProps = {
 	summary?: string
 	cover?: string
 	slug?: string
+	showComments?: boolean
 }
 
-export function BlogPreview({ markdown, title, tags, date, summary, cover, slug }: BlogPreviewProps) {
+export function BlogPreview({ markdown, title, tags, date, summary, cover, slug, showComments = false }: BlogPreviewProps) {
 	const { maxSM: isMobile } = useSize()
 	const { content, toc, loading } = useMarkdownRender(markdown)
 	const { siteContent } = useConfigStore()
@@ -48,6 +50,8 @@ export function BlogPreview({ markdown, title, tags, date, summary, cover, slug 
 					{summary && summaryInContent && <div className='text-secondary mt-6 cursor-text text-center text-sm'>“{summary}”</div>}
 
 					<div className='prose mt-6 max-w-none cursor-text'>{content}</div>
+
+					{showComments && slug && <GiscusComments key={slug} slug={slug} />}
 				</div>
 			</motion.article>
 
