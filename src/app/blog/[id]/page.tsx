@@ -8,6 +8,7 @@ import { BlogPreview } from '@/components/blog-preview'
 import { loadBlog, type BlogConfig } from '@/lib/load-blog'
 import { useReadArticles } from '@/hooks/use-read-articles'
 import LiquidGrass from '@/components/liquid-grass'
+import { ReadingProgress } from '@/components/reading-progress'
 
 export default function Page() {
 	const params = useParams() as { id?: string | string[] }
@@ -21,6 +22,7 @@ export default function Page() {
 
 	useEffect(() => {
 		let cancelled = false
+		window.scrollTo({ top: 0, behavior: 'auto' })
 		async function run() {
 			if (!slug) return
 			try {
@@ -71,15 +73,18 @@ export default function Page() {
 	return (
 		<>
 			<BlogPreview
+				key={slug}
 				markdown={blog.markdown}
 				title={title}
 				tags={tags}
 				date={date}
 				summary={blog.config.summary}
-				cover={blog.cover ? (blog.cover.startsWith('http') ? blog.cover : `${origin}${blog.cover}`) : undefined}
+				cover={blog.cover ? (blog.cover.startsWith('http') ? blog.cover : blog.cover) : undefined}
 				slug={slug}
 				showComments={!blog.config.hidden}
+				showEnhancements
 			/>
+			<ReadingProgress />
 
 			<motion.button
 				initial={{ opacity: 0, scale: 0.6 }}
