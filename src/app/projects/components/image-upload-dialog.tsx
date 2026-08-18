@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
 import { DialogModal } from '@/components/dialog-modal'
 
-export type ImageItem = { type: 'url'; url: string } | { type: 'file'; file: File; previewUrl: string; hash?: string }
+export type ImageItem = { type: 'url'; url: string } | { type: 'file'; file: File; previewUrl: string; hash?: string; thumbFile?: File }
 
 interface ImageUploadDialogProps {
 	currentImage?: string
@@ -74,7 +74,7 @@ export default function ImageUploadDialog({ currentImage, onClose, onSubmit }: I
 					<input ref={fileInputRef} type='file' accept='image/*' className='hidden' onChange={handleFileSelect} />
 					<div
 						onClick={() => fileInputRef.current?.click()}
-						className='mx-auto flex h-32 w-32 cursor-pointer items-center justify-center rounded-xl border border-gray-300 bg-secondary/10 transition-colors hover:bg-gray-200'>
+						className='bg-secondary/10 mx-auto flex h-32 w-32 cursor-pointer items-center justify-center rounded-xl border border-gray-300 transition-colors hover:bg-gray-200'>
 						{previewFile ? (
 							<img src={previewFile.previewUrl} alt='preview' className='h-full w-full rounded-xl object-cover' />
 						) : (

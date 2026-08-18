@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import type { Picture } from '../page'
+import { thumbUrl } from './picture-thumb'
 
 // 串线照片墙 · 图床桌面端实现(≥640px 视口;移动端仍用散落墙 random-layout)
 // 参数固定为推荐默认值(300ms/130px/52px);SVG 与墙容器不拦截指针事件,
@@ -218,7 +219,20 @@ const formatUploadedAt = (uploadedAt?: string) => {
 	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
-function PhotoCell({ item, pos, cell, queue, popped, skip, hover, onHoverEnter, onHoverLeave, onZoom, isEditMode = false, onDeleteSingle }: {
+function PhotoCell({
+	item,
+	pos,
+	cell,
+	queue,
+	popped,
+	skip,
+	hover,
+	onHoverEnter,
+	onHoverLeave,
+	onZoom,
+	isEditMode = false,
+	onDeleteSingle
+}: {
 	item: WallItem
 	pos: WallPos
 	cell: number
@@ -234,6 +248,9 @@ function PhotoCell({ item, pos, cell, queue, popped, skip, hover, onHoverEnter, 
 }) {
 	const [srcReady, setSrcReady] = useState(false)
 	const idRef = useRef<number | null>(null)
+	// 墙展示用缩略图,缩略图缺失时回退原图;放大查看(PhotoZoom)仍走原图
+	const [imgSrc, setImgSrc] = useState(() => thumbUrl(item.url))
+	const thumbFailedRef = useRef(false)
 
 	useEffect(() => {
 		const id = queue.register(() => setSrcReady(true))
@@ -268,13 +285,19 @@ function PhotoCell({ item, pos, cell, queue, popped, skip, hover, onHoverEnter, 
 			className='pointer-events-auto absolute origin-center -translate-1/2 cursor-pointer'>
 			{(srcReady || skip) && (
 				<img
-					src={item.url}
+					src={imgSrc}
 					decoding='async'
 					onLoad={() => {
 						if (idRef.current !== null) queue.markLoaded(idRef.current)
 					}}
 					onError={() => {
-						if (idRef.current !== null) queue.markLoaded(idRef.current)
+						// 缩略图缺失回退原图;原图也失败才推进链条
+						if (imgSrc !== item.url && !thumbFailedRef.current) {
+							thumbFailedRef.current = true
+							setImgSrc(item.url)
+						} else if (idRef.current !== null) {
+							queue.markLoaded(idRef.current)
+						}
 					}}
 					draggable={false}
 					style={{ boxShadow: hover === 0 ? '0 24px 48px rgba(0,0,0,0.32)' : undefined }}
@@ -305,7 +328,21 @@ function PhotoCell({ item, pos, cell, queue, popped, skip, hover, onHoverEnter, 
 }
 
 // 放大查看:背景 + 大图 + 可拖动书签标签 + 上一张/下一张(首尾循环)+ 键盘 ←/→/Esc
-function PhotoZoom({ item, index, total, onClose, onPrev, onNext }: { item: WallItem; index: number; total: number; onClose: () => void; onPrev: () => void; onNext: () => void }) {
+function PhotoZoom({
+	item,
+	index,
+	total,
+	onClose,
+	onPrev,
+	onNext
+}: {
+	item: WallItem
+	index: number
+	total: number
+	onClose: () => void
+	onPrev: () => void
+	onNext: () => void
+}) {
 	const [labelPos, setLabelPos] = useState<{ right: number; top: number } | null>(null)
 	const [closing, setClosing] = useState(false)
 	const [exit, setExit] = useState<{ x: number; y: number; scale: number } | null>(null)
@@ -400,31 +437,34 @@ function PhotoZoom({ item, index, total, onClose, onPrev, onNext }: { item: Wall
 						backgroundColor: '#f6e8c1',
 						borderColor: '#d9c48f'
 					}}
-					className='fixed w-[200px] min-h-[150px] cursor-pointer rounded-md border p-6 shadow-lg'>
+					className='fixed min-h-[150px] w-[200px] cursor-pointer rounded-md border p-6 shadow-lg'>
 					<div className='mb-2 text-xs text-[#8a6d3f]'>{formatUploadedAt(item.uploadedAt)}</div>
 					<div className='text-sm text-[#5f4a28]'>{item.description}</div>
-			</motion.div>
+				</motion.div>
 			)}
 			{!closing && (
-			<>
-				<button
-					onClick={onPrev}
-					aria-label='上一张'
-					style={{ zIndex: 82 }}
-					className='fixed left-6 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white/70 text-2xl text-[#5f4a28] shadow-md transition-colors hover:bg-white/95'>
-					‹
-				</button>
-				<button
-					onClick={onNext}
-					aria-label='下一张'
-					style={{ zIndex: 82 }}
-					className='fixed right-6 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white/70 text-2xl text-[#5f4a28] shadow-md transition-colors hover:bg-white/95'>
-					›
-				</button>
-				<div data-zoom-counter style={{ zIndex: 82 }} className='fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full border border-border bg-white/70 px-4 py-1.5 text-sm text-[#5f4a28] shadow-md'>
-					{index + 1} / {total}
-				</div>
-			</>
+				<>
+					<button
+						onClick={onPrev}
+						aria-label='上一张'
+						style={{ zIndex: 82 }}
+						className='border-border fixed top-1/2 left-6 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border bg-white/70 text-2xl text-[#5f4a28] shadow-md transition-colors hover:bg-white/95'>
+						‹
+					</button>
+					<button
+						onClick={onNext}
+						aria-label='下一张'
+						style={{ zIndex: 82 }}
+						className='border-border fixed top-1/2 right-6 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border bg-white/70 text-2xl text-[#5f4a28] shadow-md transition-colors hover:bg-white/95'>
+						›
+					</button>
+					<div
+						data-zoom-counter
+						style={{ zIndex: 82 }}
+						className='border-border fixed bottom-6 left-1/2 -translate-x-1/2 rounded-full border bg-white/70 px-4 py-1.5 text-sm text-[#5f4a28] shadow-md'>
+						{index + 1} / {total}
+					</div>
+				</>
 			)}
 		</>
 	)
@@ -607,7 +647,13 @@ function Wall({ items, speed, gap, cell, isEditMode = false, onDeleteSingle, onR
 	return (
 		<>
 			<div ref={containerRef} className='pointer-events-none relative w-full' style={{ height: totalH }}>
-				<svg className='pointer-events-none absolute inset-0' width='100%' height={totalH} viewBox={`0 0 ${viewportW} ${totalH}`} preserveAspectRatio='none' style={{ zIndex: 1 }}>
+				<svg
+					className='pointer-events-none absolute inset-0'
+					width='100%'
+					height={totalH}
+					viewBox={`0 0 ${viewportW} ${totalH}`}
+					preserveAspectRatio='none'
+					style={{ zIndex: 1 }}>
 					<path
 						ref={lineRef}
 						d={pathInfo.d}
@@ -625,7 +671,12 @@ function Wall({ items, speed, gap, cell, isEditMode = false, onDeleteSingle, onR
 						const on = i < decoCount
 						const flowerColor = PETAL_COLORS[i % PETAL_COLORS.length]
 						return (
-							<g key={i} data-idx={i} data-frac={dec.frac} transform={`translate(${dec.x} ${dec.y})`} style={{ opacity: on ? 1 : 0, transition: 'opacity 0.35s ease' }}>
+							<g
+								key={i}
+								data-idx={i}
+								data-frac={dec.frac}
+								transform={`translate(${dec.x} ${dec.y})`}
+								style={{ opacity: on ? 1 : 0, transition: 'opacity 0.35s ease' }}>
 								<g
 									style={{
 										transform: on ? 'scale(1)' : 'scale(0.1)',
@@ -635,15 +686,7 @@ function Wall({ items, speed, gap, cell, isEditMode = false, onDeleteSingle, onR
 									}}>
 									{[0, 72, 144, 216, 288].map(a => {
 										const rad = (a * Math.PI) / 180
-										return (
-											<circle
-												key={a}
-												cx={Math.cos(rad) * 4.6}
-												cy={Math.sin(rad) * 4.6}
-												r={3.6}
-												fill={flowerColor}
-											/>
-										)
+										return <circle key={a} cx={Math.cos(rad) * 4.6} cy={Math.sin(rad) * 4.6} r={3.6} fill={flowerColor} />
 									})}
 									<circle r={2.6} fill='#fff3c4' />
 								</g>
@@ -690,7 +733,9 @@ function Wall({ items, speed, gap, cell, isEditMode = false, onDeleteSingle, onR
 			)}
 
 			<div className='card fixed right-6 bottom-6 z-50 flex w-44 flex-col gap-2 p-3 text-xs'>
-				<div className='text-secondary'>已展示 {revealedCount}/{items.length}</div>
+				<div className='text-secondary'>
+					已展示 {revealedCount}/{items.length}
+				</div>
 				{done && <div className='text-secondary'>已到最后一张,动画暂停</div>}
 				{followAvailable && !done && (
 					<button onClick={resumeFollow} className='brand-btn px-2 py-1.5'>
@@ -703,7 +748,6 @@ function Wall({ items, speed, gap, cell, isEditMode = false, onDeleteSingle, onR
 				<button onClick={onReplay} className='rounded-lg border bg-white/60 px-2 py-1.5 transition-colors hover:bg-white/80'>
 					↻ 重播
 				</button>
-
 			</div>
 		</>
 	)

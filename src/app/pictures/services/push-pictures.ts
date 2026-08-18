@@ -4,6 +4,7 @@ import { getAuthToken } from '@/lib/auth'
 import { GITHUB_CONFIG } from '@/consts'
 import type { ImageItem } from '../../projects/components/image-upload-dialog'
 import { getFileExt } from '@/lib/utils'
+import { thumbRepoPath } from '../components/picture-thumb'
 import { toast } from 'sonner'
 import { Picture } from '../page'
 
@@ -49,6 +50,19 @@ export async function pushPictures(params: PushPicturesParams): Promise<void> {
 						sha: blobData.sha
 					})
 					uploadedHashes.add(hash)
+
+					// 缩略图:600px webp,文件名固定为 <hash>.webp(与 thumbUrl 映射一致),进 sm/ 目录
+					if (imageItem.thumbFile) {
+						const thumbPath = `public/images/pictures/sm/${hash}.webp`
+						const thumbBase64 = await fileToBase64NoPrefix(imageItem.thumbFile)
+						const thumbBlob = await createBlob(token, GITHUB_CONFIG.OWNER, GITHUB_CONFIG.REPO, thumbBase64, 'base64')
+						treeItems.push({
+							path: thumbPath,
+							mode: '100644',
+							type: 'blob',
+							sha: thumbBlob.sha
+						})
+					}
 				}
 
 				const [groupId, indexStr] = key.split('::')
@@ -84,19 +98,13 @@ export async function pushPictures(params: PushPicturesParams): Promise<void> {
 
 	// 读取之前的 list.json，找出不再使用的图片文件
 	toast.info('正在检查需要删除的文件...')
-	const previousListJson = await readTextFileFromRepo(
-		token,
-		GITHUB_CONFIG.OWNER,
-		GITHUB_CONFIG.REPO,
-		'src/app/pictures/list.json',
-		GITHUB_CONFIG.BRANCH
-	)
+	const previousListJson = await readTextFileFromRepo(token, GITHUB_CONFIG.OWNER, GITHUB_CONFIG.REPO, 'src/app/pictures/list.json', GITHUB_CONFIG.BRANCH)
 
 	if (previousListJson) {
 		try {
 			const previousPictures: Picture[] = JSON.parse(previousListJson)
 			const previousImageUrls = new Set<string>()
-			
+
 			for (const picture of previousPictures) {
 				if (picture.image) {
 					previousImageUrls.add(picture.image)
@@ -111,13 +119,22 @@ export async function pushPictures(params: PushPicturesParams): Promise<void> {
 				if (!currentImageUrls.has(url) && url.startsWith('/images/pictures/')) {
 					// 这是一个本地图片文件，需要删除
 					const filename = url.replace('/images/pictures/', '')
-					const path = `public/images/pictures/${filename}`
 					treeItems.push({
-						path,
+						path: `public/images/pictures/${filename}`,
 						mode: '100644',
 						type: 'blob',
 						sha: null
 					})
+					// 连同缩略图一起删除(sm/<base>.webp);不存在则为空操作,不报错
+					const thumbPath = thumbRepoPath(url)
+					if (thumbPath) {
+						treeItems.push({
+							path: thumbPath,
+							mode: '100644',
+							type: 'blob',
+							sha: null
+						})
+					}
 				}
 			}
 		} catch (error) {

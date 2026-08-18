@@ -7,6 +7,7 @@ import { Picture } from '../page'
 import siteContent from '@/config/site-content.json'
 import { cn } from '@/lib/utils'
 import { useSize } from '@/hooks/use-size'
+import { thumbUrl } from './picture-thumb'
 
 interface RandomLayoutProps {
 	pictures: Picture[]
@@ -38,6 +39,7 @@ interface FloatingImageProps {
 	isEditMode?: boolean
 	onDeleteSingle?: (pictureId: string, imageIndex: number | 'single') => void
 	onDeleteGroup?: () => void
+	sequencer: GallerySequencer
 }
 
 type UrlItem = {
@@ -218,8 +220,6 @@ class GallerySequencer {
 	}
 }
 
-const gallerySequencer = new GallerySequencer()
-
 const FloatingImage = ({
 	url,
 	index,
@@ -231,7 +231,8 @@ const FloatingImage = ({
 	imageIndex,
 	isEditMode,
 	onDeleteSingle,
-	onDeleteGroup
+	onDeleteGroup,
+	sequencer
 }: FloatingImageProps) => {
 	const { centerX, centerY } = useCenterStore()
 	const { maxSM, init } = useSize()
@@ -242,19 +243,22 @@ const FloatingImage = ({
 	const [visible, setVisible] = useState(false)
 	const sequencerIdRef = useRef<number | null>(null)
 	const [dragOffset, setDragOffset] = useState(() => loadSavedOffset(url))
+	// 墙展示用缩略图,放大切原图;缩略图缺失时回退原图(thumbFailedRef)
+	const [imgSrc, setImgSrc] = useState(() => thumbUrl(url))
+	const thumbFailedRef = useRef(false)
 
 	// 注册到画廊调度器:后台预加载 + 按顺序逐张展示
 	useEffect(() => {
-		const id = gallerySequencer.register(
+		const id = sequencer.register(
 			() => setSrcReady(true),
 			() => setVisible(true)
 		)
 		sequencerIdRef.current = id
 		return () => {
-			gallerySequencer.unregister(id)
+			sequencer.unregister(id)
 			sequencerIdRef.current = null
 		}
-	}, [])
+	}, [sequencer])
 
 	const [originalSize, setOriginalSize] = useState<OriginalSize | null>(null)
 
@@ -299,6 +303,16 @@ const FloatingImage = ({
 
 	const [isZoomed, setIsZoomed] = useState(false)
 	const dragStartOffsetRef = useRef({ x: 0, y: 0 })
+
+	// 放大时切到原图保证清晰;回到墙时切回复略图节省内存(缩略图缺失则保持原图)
+	useEffect(() => {
+		if (!srcReady) return
+		if (isZoomed) {
+			setImgSrc(url)
+		} else if (!thumbFailedRef.current) {
+			setImgSrc(thumbUrl(url))
+		}
+	}, [isZoomed, srcReady, url])
 
 	if (!position) return null
 
@@ -394,19 +408,22 @@ const FloatingImage = ({
 				)}>
 				{srcReady && (
 					<img
-						src={url}
+						src={imgSrc}
 						decoding='async'
 						onLoad={event => {
 							const img = event.currentTarget
 							setOriginalSize({ width: img.naturalWidth, height: img.naturalHeight })
 							if (sequencerIdRef.current !== null) {
-								gallerySequencer.markLoaded(sequencerIdRef.current)
+								sequencer.markLoaded(sequencerIdRef.current)
 							}
 						}}
 						onError={() => {
-							// 加载失败也推进链条,避免卡住后面的图片
-							if (sequencerIdRef.current !== null) {
-								gallerySequencer.markLoaded(sequencerIdRef.current)
+							// 缩略图缺失回退原图;原图也失败才推进链条,避免后面的图片被卡住
+							if (imgSrc !== url && !thumbFailedRef.current) {
+								thumbFailedRef.current = true
+								setImgSrc(url)
+							} else if (sequencerIdRef.current !== null) {
+								sequencer.markLoaded(sequencerIdRef.current)
 							}
 						}}
 						draggable={false}
@@ -506,6 +523,9 @@ export const RandomLayout = ({ pictures, isEditMode = false, onDeleteSingle, onD
 	useCenterInit()
 	const { width, height } = useCenterStore()
 	const [show, setShow] = useState(false)
+	// 每个实例独立调度器,避免模块单例在多次进出页面时 items 数组无限增长
+	const sequencerRef = useRef<GallerySequencer | null>(null)
+	if (!sequencerRef.current) sequencerRef.current = new GallerySequencer()
 
 	useEffect(() => {
 		setTimeout(() => {
@@ -550,6 +570,7 @@ export const RandomLayout = ({ pictures, isEditMode = false, onDeleteSingle, onD
 						pictureId={item.pictureId}
 						imageIndex={item.imageIndex}
 						isEditMode={isEditMode}
+						sequencer={sequencerRef.current!}
 						onDeleteSingle={onDeleteSingle}
 						onDeleteGroup={picture ? () => onDeleteGroup?.(picture) : undefined}
 					/>

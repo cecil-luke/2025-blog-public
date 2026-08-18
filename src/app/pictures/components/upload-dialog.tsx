@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
 import { DialogModal } from '@/components/dialog-modal'
+import { makeThumbFile } from '@/lib/file-utils'
 import type { ImageItem } from '../../projects/components/image-upload-dialog'
 
 interface UploadDialogProps {
@@ -29,11 +30,14 @@ export default function UploadDialog({ onClose, onSubmit }: UploadDialogProps) {
 			}
 
 			const previewUrl = URL.createObjectURL(file)
-			nextImages.push({
-				type: 'file',
-				file,
-				previewUrl
-			})
+			const item: ImageItem = { type: 'file', file, previewUrl }
+			// 后台生成 600px webp 缩略图,提交时和原图一起进仓库;失败留空,运行时自动回退原图
+			makeThumbFile(file)
+				.then(thumb => {
+					item.thumbFile = thumb
+				})
+				.catch(err => console.error('生成缩略图失败:', err))
+			nextImages.push(item)
 		}
 
 		setImages(nextImages)
@@ -78,7 +82,7 @@ export default function UploadDialog({ onClose, onSubmit }: UploadDialogProps) {
 					{images.length === 0 ? (
 						<div
 							onClick={() => fileInputRef.current?.click()}
-							className='flex h-32 cursor-pointer items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 transition-colors hover:bg-secondary/10'>
+							className='hover:bg-secondary/10 flex h-32 cursor-pointer items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 transition-colors'>
 							<div className='text-center'>
 								<Plus className='mx-auto mb-1 h-8 w-8 text-gray-500' />
 								<p className='text-secondary text-xs'>点击选择图片</p>
