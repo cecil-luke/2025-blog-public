@@ -1,10 +1,38 @@
 [
 	{
-		"name": "Close To You",
-		"src": "/music/close-to-you.mp3"
+		"name": "大鱼",
+		"src": "/music/dayu.mp3"
+	},
+	{
+		"name": "The Sound Of Silence",
+		"src": "/music/TheSoundOfSilence.mp3"
+	},
+	{
+		"name": "Let It Be",
+		"src": "/music/LetItBeTheBeatles.mp3"
+	},
+	{
+		"name": "Photograph",
+		"src": "/music/Photograph.mp3"
+	},
+	{
+		"name": "平凡之路-朴树",
+		"src": "/music/pingfanzhilu.mp3"
+	},
+	{
+		"name": "戒不掉(原声版)",
+		"src": "/music/jiebudiao.mp3"
+	},
+	{
+		"name": "一路向北(COVER版)",
+		"src": "/music/yiluxiangbei.mp3"
 	},
 	{
 		"name": "Christmas",
 		"src": "/music/christmas.m4a"
+	},
+	{
+		"name": "Close To You",
+		"src": "/music/close-to-you.mp3"
 	}
 ]
