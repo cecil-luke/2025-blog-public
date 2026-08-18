@@ -304,15 +304,29 @@ const FloatingImage = ({
 	const [isZoomed, setIsZoomed] = useState(false)
 	const dragStartOffsetRef = useRef({ x: 0, y: 0 })
 
-	// 放大时切到原图保证清晰;回到墙时切回复略图节省内存(缩略图缺失则保持原图)
+	// 放大时后台预加载原图,就绪后再切换 src,避免直接换 src 造成旧图被清空、新图未就绪的闪现空白;回到墙时切回复略图节省内存
 	useEffect(() => {
 		if (!srcReady) return
 		if (isZoomed) {
-			setImgSrc(url)
-		} else if (!thumbFailedRef.current) {
+			if (imgSrc === url) return
+			let cancelled = false
+			const preload = new Image()
+			preload.onload = () => {
+				if (!cancelled) setImgSrc(url)
+			}
+			preload.onerror = () => {
+				if (!cancelled) setImgSrc(url)
+			}
+			preload.src = url
+			return () => {
+				cancelled = true
+				preload.onload = null
+				preload.onerror = null
+			}
+		} else if (!thumbFailedRef.current && imgSrc !== thumbUrl(url)) {
 			setImgSrc(thumbUrl(url))
 		}
-	}, [isZoomed, srcReady, url])
+	}, [isZoomed, srcReady, url, imgSrc])
 
 	if (!position) return null
 
