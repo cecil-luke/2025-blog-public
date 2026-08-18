@@ -9,6 +9,8 @@ import { useSize, useSizeInit } from '@/hooks/use-size'
 import { useConfigStore } from '@/app/(home)/stores/config-store'
 import { ScrollTopButton } from '@/components/scroll-top-button'
 import MusicCard from '@/components/music-card'
+import { SearchPaletteContainer } from '@/components/search-palette-container'
+import { Search } from 'lucide-react'
 
 export default function Layout({ children }: PropsWithChildren) {
 	useCenterInit()
@@ -59,7 +61,19 @@ export default function Layout({ children }: PropsWithChildren) {
 				{!maxSM && cardStyles.musicCard?.enabled !== false && <MusicCard />}
 			</main>
 
+			{maxSM && init && (
+				<button
+					type='button'
+					aria-label='搜索文章'
+					onClick={() => window.dispatchEvent(new CustomEvent('dsh-toggle-search-palette'))}
+					className='bg-brand/20 fixed right-6 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-50 flex size-12 items-center justify-center rounded-full shadow-md backdrop-blur-sm transition-colors hover:bg-brand/30'>
+					<Search className='size-5 text-primary' />
+				</button>
+			)}
+
 			{maxSM && init && <ScrollTopButton className='bg-brand/20 fixed right-6 bottom-8 z-50 shadow-md' />}
+
+			<SearchPaletteContainer />
 		</>
 	)
 }

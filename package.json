@@ -6,6 +6,8 @@
     "dev": "next dev --turbopack -p 2025",
     "svg": "node scripts/gen-svgs-index.js",
     "gen:thumbs": "node scripts/gen-picture-thumbs.js",
+    "gen:search-index": "node scripts/gen-search-index.js",
+    "prebuild": "node scripts/gen-search-index.js",
     "build": "next build",
     "start": "next start",
     "build:cf": "opennextjs-cloudflare build",

@@ -19,7 +19,7 @@ import { useConfigStore } from '@/app/(home)/stores/config-store'
 import { readFileAsText } from '@/lib/file-utils'
 import { cn } from '@/lib/utils'
 import { saveBlogEdits } from './services/save-blog-edits'
-import { Check } from 'lucide-react'
+import { Check, Search } from 'lucide-react'
 import { BlogCoverHoverPreview, useBlogCoverHover } from './components/blog-cover-hover'
 import { CategoryModal } from './components/category-modal'
 
@@ -320,6 +320,10 @@ function BlogArchive() {
 		[setPrivateKey]
 	)
 
+	const handleSearchClick = useCallback(() => {
+		window.dispatchEvent(new CustomEvent('dsh-toggle-search-palette'))
+	}, [])
+
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (!editMode && (e.ctrlKey || e.metaKey) && e.key === ',') {
@@ -350,30 +354,46 @@ function BlogArchive() {
 
 			<div className='flex flex-col items-center justify-center gap-6 px-6 pt-24 max-sm:pt-24'>
 				{items.length > 0 && (
-					<motion.div
-						initial={{ opacity: 0, scale: 0.6 }}
-						animate={{ opacity: 1, scale: 1 }}
-						className='card btn-rounded relative mx-auto flex items-center gap-1 p-1 max-sm:hidden'>
-						{[
-							{ value: 'day', label: '日' },
-							{ value: 'week', label: '周' },
-							{ value: 'month', label: '月' },
-							{ value: 'year', label: '年' },
-							...(enableCategories ? ([{ value: 'category', label: '分类' }] as const) : [])
-						].map(option => (
-							<motion.button
-								key={option.value}
-								whileHover={{ scale: 1.05 }}
-								whileTap={{ scale: 0.95 }}
-								onClick={() => changeDisplayMode(option.value as DisplayMode)}
-								className={cn(
-									'btn-rounded px-3 py-1.5 text-xs font-medium transition-all',
-									displayMode === option.value ? 'bg-brand text-white shadow-sm' : 'text-secondary hover:text-brand hover:bg-white/60'
-								)}>
-								{option.label}
-							</motion.button>
-						))}
-					</motion.div>
+					<div className='flex items-center gap-3 max-sm:hidden'>
+						<motion.div
+							initial={{ opacity: 0, scale: 0.6 }}
+							animate={{ opacity: 1, scale: 1 }}
+							className='card btn-rounded relative flex items-center gap-1 p-1'>
+							{[
+								{ value: 'day', label: '日' },
+								{ value: 'week', label: '周' },
+								{ value: 'month', label: '月' },
+								{ value: 'year', label: '年' },
+								...(enableCategories ? ([{ value: 'category', label: '分类' }] as const) : [])
+							].map(option => (
+								<motion.button
+									key={option.value}
+									whileHover={{ scale: 1.05 }}
+									whileTap={{ scale: 0.95 }}
+									onClick={() => changeDisplayMode(option.value as DisplayMode)}
+									className={cn(
+										'btn-rounded px-3 py-1.5 text-xs font-medium transition-all',
+										displayMode === option.value ? 'bg-brand text-white shadow-sm' : 'text-secondary hover:text-brand hover:bg-white/60'
+									)}>
+									{option.label}
+								</motion.button>
+							))}
+						</motion.div>
+
+						<motion.button
+							initial={{ opacity: 0, scale: 0.6 }}
+							animate={{ opacity: 1, scale: 1 }}
+							whileHover={{ scale: 1.05 }}
+							whileTap={{ scale: 0.95 }}
+							onClick={handleSearchClick}
+							className='btn-rounded bg-card text-secondary hover:text-brand relative flex items-center gap-2 border px-3 py-2 text-xs font-medium transition-all'>
+							<Search className='size-3.5' />
+							<span>搜索</span>
+							<kbd className='bg-white/60 rounded border px-1.5 py-0.5 text-[10px] font-normal'>
+								{typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent) ? '⌘K' : 'Ctrl+K'}
+							</kbd>
+						</motion.button>
+					</div>
 				)}
 
 				{groupKeys.map((groupKey, index) => {
