@@ -6,6 +6,18 @@
 
 ## 改动记录
 
+### 2026-08-20 雪花背景组件性能优化 + Bug 修复
+
+- **架构重构为单例引擎**：所有 `SnowfallBackground` 实例共享单一 `requestAnimationFrame` 循环与指针事件监听器，双实例场景下每帧计算量减少 50%
+- **渲染优化**：交互反馈从 `drop-shadow`（合成器重计算）改为 `opacity`（纯 GPU 混合），`will-change` 从 `transform, filter` 改为 `transform, opacity`，降低 GPU 开销
+- **资源自动回收**：最后实例卸载时自动停止动画引擎、移除事件监听器
+- **修复复制粘贴导致的死代码**：`else` 分支内存在不可达的 `if` 块，交互缩放效果丢失
+- **修复事件监听器泄漏**：清理函数正确执行 `removeEventListener`，避免重复挂载后监听器堆积
+- **修复首帧 deltaTime 爆炸**：用 `null` 标记未初始化状态，跳过首帧物理更新
+- **修复页面重新可见时跳帧**：检测 `deltaTime > 100ms` 则跳过该帧，避免标签页切换后雪花位移异常
+- **恢复淡入动画**：组件挂载后 `opacity` 从 0 过渡到 1，持续 1 秒
+- 涉及文件：`src/layout/backgrounds/snowfall.tsx
+
 ### 2026-08-15 页面与可访问性
 
 - 页面语言从英文改为中文（`zh-CN`）
