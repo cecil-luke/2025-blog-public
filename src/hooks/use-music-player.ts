@@ -33,8 +33,6 @@ export interface MusicPlayerState {
  * - 运行时 fetch('/music/list.json') 读取曲目清单，失败回退兜底列表
  * - ended 事件自动切下一首循环播放；单曲列表从头循环重播
  * - 通过 ref 规避 audio 事件回调的闭包陷阱
- * - 监听 visibilitychange：页面不可见时自动暂停（省电 + 移动端合规），
- *   visible 时不自动恢复（由用户手动续播）
  */
 export function useMusicPlayer(enabled = true): MusicPlayerState {
 	const [tracks, setTracks] = useState<Track[]>(FALLBACK_TRACKS)
@@ -45,7 +43,6 @@ export function useMusicPlayer(enabled = true): MusicPlayerState {
 	const currentIndexRef = useRef(0)
 	const tracksRef = useRef<Track[]>(FALLBACK_TRACKS)
 	const loadedSrcRef = useRef<string | null>(null)
-	const isPlayingRef = useRef(false)
 
 	const currentTrack = tracks[currentIndex]
 
@@ -78,11 +75,7 @@ export function useMusicPlayer(enabled = true): MusicPlayerState {
 		tracksRef.current = tracks
 	}, [tracks])
 
-	useEffect(() => {
-		isPlayingRef.current = isPlaying
-	}, [isPlaying])
-
-	// Initialize audio element + 事件监听
+// Initialize audio element + 事件监听
 	useEffect(() => {
 		if (!enabled) return
 		if (!audioRef.current) {
@@ -159,19 +152,7 @@ export function useMusicPlayer(enabled = true): MusicPlayerState {
 		}
 	}, [isPlaying, currentIndex, tracks])
 
-	// visibilitychange：不可见时自动暂停（省电 + 移动端合规）
-	useEffect(() => {
-		if (!enabled) return
-		const handleVisibility = () => {
-			if (document.hidden && isPlayingRef.current) {
-				setIsPlaying(false)
-			}
-		}
-		document.addEventListener('visibilitychange', handleVisibility)
-		return () => document.removeEventListener('visibilitychange', handleVisibility)
-	}, [enabled])
-
-	// Cleanup on unmount
+// Cleanup on unmount
 	useEffect(() => {
 		return () => {
 			if (audioRef.current) {
