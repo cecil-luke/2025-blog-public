@@ -12,6 +12,17 @@ export function GiscusComments({ slug }: GiscusCommentsProps) {
 	const [loadRequested, setLoadRequested] = useState(false)
 	const [loadError, setLoadError] = useState(false)
 	const [attempt, setAttempt] = useState(0)
+	const [giscusTheme, setGiscusTheme] = useState<'dark_dimmed' | 'noborder_light'>('noborder_light')
+
+	useEffect(() => {
+		const handler = (e: Event) => {
+			const effective = (e as CustomEvent).detail as 'light' | 'dark'
+			setGiscusTheme(effective === 'dark' ? 'dark_dimmed' : 'noborder_light')
+			setAttempt(v => v + 1)
+		}
+		window.addEventListener('blog-theme-change', handler)
+		return () => window.removeEventListener('blog-theme-change', handler)
+	}, [])
 
 	useEffect(() => {
 		if (!loadRequested || !containerRef.current) return
@@ -35,7 +46,7 @@ export function GiscusComments({ slug }: GiscusCommentsProps) {
 		script.setAttribute('data-reactions-enabled', COMMENTS_CONFIG.reactionsEnabled ? '1' : '0')
 		script.setAttribute('data-emit-metadata', '0')
 		script.setAttribute('data-input-position', COMMENTS_CONFIG.inputPosition)
-		script.setAttribute('data-theme', COMMENTS_CONFIG.theme)
+		script.setAttribute('data-theme', giscusTheme)
 		script.setAttribute('data-lang', COMMENTS_CONFIG.language)
 
 		const handleError = () => setLoadError(true)

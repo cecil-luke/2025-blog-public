@@ -79,7 +79,7 @@ export default function Page() {
 				tags={tags}
 				date={date}
 				summary={blog.config.summary}
-				cover={blog.cover ? (blog.cover.startsWith('http') ? blog.cover : blog.cover) : undefined}
+				cover={blog.cover || undefined}
 				slug={slug}
 				showComments={!blog.config.hidden}
 				showEnhancements
@@ -92,7 +92,7 @@ export default function Page() {
 				whileHover={{ scale: 1.05 }}
 				whileTap={{ scale: 0.95 }}
 				onClick={handleEdit}
-				className='absolute top-4 right-6 rounded-xl border bg-white/60 px-6 py-2 text-sm backdrop-blur-sm transition-colors hover:bg-white/80 max-sm:hidden'>
+				className='bg-card absolute top-4 right-6 z-10 rounded-xl border px-6 py-2 text-sm backdrop-blur-sm transition-colors max-sm:hidden'>
 				编辑
 			</motion.button>
 

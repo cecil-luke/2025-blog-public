@@ -202,14 +202,14 @@ export function ColorConfig({ formData, setFormData }: ColorConfigProps) {
 							whileHover={{ scale: 1.05 }}
 							whileTap={{ scale: 0.95 }}
 							onClick={handleRandomizeColors}
-							className='rounded-lg border bg-white/60 px-3 py-1 text-xs whitespace-nowrap'>
+							className='rounded-lg border bg-card px-3 py-1 text-xs whitespace-nowrap'>
 							随机配色
 						</motion.button>
 						<motion.button
 							whileHover={{ scale: 1.05 }}
 							whileTap={{ scale: 0.95 }}
 							onClick={handleAddColor}
-							className='rounded-lg border bg-white/60 px-3 py-1 text-xs whitespace-nowrap'>
+							className='rounded-lg border bg-card px-3 py-1 text-xs whitespace-nowrap'>
 							+ 添加颜色
 						</motion.button>
 					</div>
@@ -222,7 +222,7 @@ export function ColorConfig({ formData, setFormData }: ColorConfigProps) {
 								{formData.backgroundColors.length > 1 && (
 									<button
 										onClick={() => handleRemoveColor(index)}
-										className='text-secondary absolute -top-1 -right-2 rounded-lg border bg-white/60 text-xs whitespace-nowrap opacity-0 transition-opacity group-hover:opacity-100'>
+										className='text-secondary absolute -top-1 -right-2 rounded-lg border bg-card text-xs whitespace-nowrap opacity-0 transition-opacity group-hover:opacity-100'>
 										<XIcon className='size-3' />
 									</button>
 								)}
@@ -237,7 +237,7 @@ export function ColorConfig({ formData, setFormData }: ColorConfigProps) {
 					<button
 						key={preset.name}
 						onClick={() => handlePresetChange(preset)}
-						className='flex items-center gap-3 rounded-lg border bg-white/60 p-3 transition-colors hover:bg-white/80'>
+						className='flex items-center gap-3 rounded-lg border bg-white/60 p-3 transition-colors hover:bg-white/10'>
 						<div className='flex items-center gap-2'>
 							<div
 								className='h-10 w-10 rounded-lg border-2 border-white/20 shadow-sm'

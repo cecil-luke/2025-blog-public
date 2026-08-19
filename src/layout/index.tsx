@@ -10,6 +10,7 @@ import { useConfigStore } from '@/app/(home)/stores/config-store'
 import { ScrollTopButton } from '@/components/scroll-top-button'
 import MusicCard from '@/components/music-card'
 import MusicCardMobile from '@/components/music-card-mobile'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { SearchPaletteContainer } from '@/components/search-palette-container'
 import { Search } from 'lucide-react'
 
@@ -62,6 +63,12 @@ export default function Layout({ children }: PropsWithChildren) {
 				{!maxSM && cardStyles.musicCard?.enabled !== false && <MusicCard />}
 				{maxSM && init && cardStyles.musicCard?.enabled !== false && <MusicCardMobile />}
 			</main>
+
+			{/* 桌面端主题切换按钮（左移避让页面操作按钮） */}
+			<ThemeToggle variant='desktop' />
+
+			{/* 移动端浮动按钮：从上到下依次为主题切换、搜索、目录、返回顶部 */}
+			{maxSM && init && <ThemeToggle variant='mobile' />}
 
 			{maxSM && init && (
 				<button

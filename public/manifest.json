@@ -1,10 +1,17 @@
 {
-	"short_name": "",
-	"name": "",
+	"short_name": "Lukias Blog",
+	"name": "Lukias 的个人博客",
 	"start_url": ".",
-
+	"display": "standalone",
+	"theme_color": "#d4e8f3",
+	"background_color": "#d4e8f3",
 	"form_factor": "wide",
-
-	"icons": [],
-	"display": "standalone"
+	"icons": [
+		{
+			"src": "/favicon.png",
+			"sizes": "any",
+			"type": "image/png",
+			"purpose": "any"
+		}
+	]
 }

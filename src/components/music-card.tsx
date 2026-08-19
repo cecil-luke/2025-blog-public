@@ -111,7 +111,7 @@ export default function MusicCard() {
 					onClick={player.playPrev}
 					aria-label='上一首'
 					title='上一首'
-					className='text-secondary hover:text-brand flex size-8 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-white/60'>
+					className='text-secondary hover:text-brand flex size-8 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-brand/10'>
 					<SkipBack className='size-4' />
 				</button>
 
@@ -127,7 +127,7 @@ export default function MusicCard() {
 					onClick={player.playNext}
 					aria-label='下一首'
 					title='下一首'
-					className='text-secondary hover:text-brand flex size-8 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-white/60'>
+					className='text-secondary hover:text-brand flex size-8 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-brand/10'>
 					<SkipForward className='size-4' />
 				</button>
 
@@ -137,7 +137,7 @@ export default function MusicCard() {
 					title='选择歌曲'
 					aria-expanded={playlistOpen}
 					className={clsx(
-						'flex size-8 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-white/60',
+						'flex size-8 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-brand/10',
 						playlistOpen ? 'text-brand' : 'text-secondary'
 					)}>
 					<ListMusic className='size-4' />
@@ -162,7 +162,7 @@ export default function MusicCard() {
 										}}
 										className={clsx(
 											'flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors',
-											isCurrent ? 'bg-brand/15 text-brand' : 'text-secondary hover:text-primary hover:bg-white/60'
+											isCurrent ? 'bg-brand/15 text-brand' : 'text-secondary hover:text-primary hover:bg-brand/10'
 										)}>
 										<span className='flex size-4 shrink-0 items-center justify-center'>
 											{isCurrent && isPlaying ? <Volume2 className='size-3.5' /> : <span className='size-1.5 rounded-full bg-current' />}

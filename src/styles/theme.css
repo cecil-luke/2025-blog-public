@@ -13,3 +13,22 @@
 		'PingFang SC', -apple-system, system-ui, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Noto Sans', sans-serif, BlinkMacSystemFont, 'Helvetica Neue',
 		'Hiragino Sans GB', 'Microsoft YaHei', Arial;
 }
+
+/* 暗色模式色组——与 color-config.tsx 中"深夜"预设一致。
+   由 use-theme.ts 在运行时通过 data-theme="dark" + 内联 CSS 变量切换，
+   此处作为 CSS 层面的声明性覆盖，确保即使 JS 未执行也能降级适配。 */
+:root[data-theme='dark'] {
+	--color-primary: #e6e8e8;
+	--color-secondary: #acadae;
+	--color-bg: #0a051f;
+	--color-border: #8a8a8a5e;
+	--color-card: #ffffff0e;
+	--color-article: #1a1a2e66;
+	--color-brand: #35bfab;
+	--color-brand-secondary: #1fc9e7;
+	color-scheme: dark;
+}
+
+:root[data-theme='light'] {
+	color-scheme: light;
+}

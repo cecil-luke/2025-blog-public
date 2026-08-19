@@ -7,7 +7,7 @@ export const COMMENTS_CONFIG = {
 	strict: true,
 	reactionsEnabled: false,
 	inputPosition: 'top',
-	theme: 'noborder_light',
+	theme: 'light', // light | dark；use-theme.ts 运行时动态切换为 noborder_light / dark_dimmed
 	language: 'zh-CN',
 	discussionsUrl: 'https://github.com/cecil-luke/2025-blog-public-comments/discussions'
 } as const

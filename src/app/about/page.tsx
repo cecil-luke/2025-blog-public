@@ -192,7 +192,7 @@ export default function Page() {
 							whileTap={{ scale: 0.95 }}
 							onClick={handleCancel}
 							disabled={isSaving}
-							className='rounded-xl border bg-white/60 px-6 py-2 text-sm'>
+							className='rounded-xl border bg-card backdrop-blur-sm px-6 py-2 text-sm'>
 							取消
 						</motion.button>
 						<motion.button
@@ -200,7 +200,7 @@ export default function Page() {
 							whileTap={{ scale: 0.95 }}
 							onClick={() => setIsPreviewMode(prev => !prev)}
 							disabled={isSaving}
-							className={`rounded-xl border bg-white/60 px-6 py-2 text-sm`}>
+							className={`rounded-xl border bg-card backdrop-blur-sm px-6 py-2 text-sm`}>
 							{isPreviewMode ? '继续编辑' : '预览'}
 						</motion.button>
 						<motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleSaveClick} disabled={isSaving} className='brand-btn px-6'>
@@ -213,7 +213,7 @@ export default function Page() {
 							whileHover={{ scale: 1.05 }}
 							whileTap={{ scale: 0.95 }}
 							onClick={handleEnterEditMode}
-							className='rounded-xl border bg-white/60 px-6 py-2 text-sm backdrop-blur-sm transition-colors hover:bg-white/80'>
+							className='rounded-xl border bg-card backdrop-blur-sm px-6 py-2 text-sm backdrop-blur-sm transition-colors hover:bg-card/80'>
 							编辑
 						</motion.button>
 					)

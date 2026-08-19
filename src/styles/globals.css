@@ -48,7 +48,7 @@
 	.range-track::-webkit-slider-runnable-track {
 		height: 6px;
 		border-radius: 9999px;
-		background: linear-gradient(90deg, 0%, color-mix(in srgb, var(--color-brand) 50%, transparent) 100%);
+		background: linear-gradient(90deg, var(--color-brand) 0%, color-mix(in srgb, var(--color-brand) 50%, transparent) 100%);
 	}
 
 	.range-track::-moz-range-track {
@@ -88,6 +88,13 @@
 	html li[data-sonner-toast][data-styled='true'] {
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
 		@apply bg-white/40! backdrop-blur;
+	}
+
+	/* 暗色模式下 toast 适配 */
+	:root[data-theme='dark'] li[data-sonner-toast][data-styled='true'] {
+		background-color: rgba(30, 30, 50, 0.7) !important;
+		border: 1px solid rgba(255, 255, 255, 0.1) !important;
+		color: var(--color-primary);
 	}
 }
 
@@ -176,3 +183,26 @@
 		animation: heartbeat-frame 0.8s ease-in-out;
 	}
 }
+
+
+/* ── 暗色模式：硬编码 bg-white/N 工具类覆写 ──
+   原代码大量使用 bg-white/60、bg-white/80 等半透明白色做按钮/面板背景，
+   暗色下发白突兀。统一覆写为暗色半透明。CSS 中 \/ 转义匹配 Tailwind 生成的类名。 */
+:root[data-theme='dark'] .bg-white\/40 { background-color: rgba(40, 40, 55, 0.4) !important; }
+:root[data-theme='dark'] .bg-white\/50 { background-color: rgba(40, 40, 55, 0.5) !important; }
+:root[data-theme='dark'] .bg-white\/60 { background-color: rgba(40, 40, 55, 0.6) !important; }
+:root[data-theme='dark'] .bg-white\/70 { background-color: rgba(40, 40, 55, 0.7) !important; }
+:root[data-theme='dark'] .bg-white\/80 { background-color: rgba(40, 40, 55, 0.8) !important; }
+:root[data-theme='dark'] .bg-white\/90 { background-color: rgba(40, 40, 55, 0.9) !important; }
+:root[data-theme='dark'] .bg-white { background-color: rgba(50, 50, 65, 0.92) !important; }
+
+:root[data-theme='dark'] .hover\:bg-white\/60:hover { background-color: rgba(50, 50, 65, 0.6) !important; }
+:root[data-theme='dark'] .hover\:bg-white\/80:hover { background-color: rgba(50, 50, 65, 0.8) !important; }
+:root[data-theme='dark'] .hover\:bg-white\/10:hover { background-color: rgba(255, 255, 255, 0.1) !important; }
+:root[data-theme='dark'] .hover\:bg-white:hover { background-color: rgba(50, 50, 65, 0.92) !important; }
+:root[data-theme='dark'] .focus\:bg-white\/80:focus { background-color: rgba(50, 50, 65, 0.8) !important; }
+
+/* 暗色模式下 text-gray-* 调整为更柔和的灰 */
+:root[data-theme='dark'] .text-gray-700,
+:root[data-theme='dark'] .text-gray-600 { color: var(--color-secondary) !important; }
+:root[data-theme='dark'] .text-gray-400 { color: var(--color-secondary) !important; opacity: 0.8; }

@@ -155,6 +155,13 @@ export default function MusicCardMobile() {
 						</button>
 						<button
 							type='button'
+							onClick={player.playPrev}
+							aria-label='上一首'
+							className='text-secondary hover:text-brand flex size-7 shrink-0 items-center justify-center'>
+							<SkipBack className='size-4' />
+						</button>
+						<button
+							type='button'
 							onClick={player.togglePlayPause}
 							aria-label='暂停'
 							className='bg-brand/15 flex size-8 shrink-0 items-center justify-center rounded-full'>
@@ -213,7 +220,7 @@ export default function MusicCardMobile() {
 									type='button'
 									onClick={closeDrawer}
 									aria-label='收起'
-									className='text-secondary hover:text-primary flex size-8 items-center justify-center rounded-full hover:bg-white/60'>
+									className='text-secondary hover:text-primary flex size-8 items-center justify-center rounded-full hover:bg-brand/10'>
 									<X className='size-5' />
 								</button>
 							</div>
@@ -224,7 +231,7 @@ export default function MusicCardMobile() {
 									type='button'
 									onClick={player.playPrev}
 									aria-label='上一首'
-									className='text-secondary hover:text-brand flex size-9 shrink-0 items-center justify-center rounded-full hover:bg-white/60'>
+									className='text-secondary hover:text-brand flex size-9 shrink-0 items-center justify-center rounded-full hover:bg-brand/10'>
 									<SkipBack className='size-5' />
 								</button>
 								<button
@@ -238,7 +245,7 @@ export default function MusicCardMobile() {
 									type='button'
 									onClick={player.playNext}
 									aria-label='下一首'
-									className='text-secondary hover:text-brand flex size-9 shrink-0 items-center justify-center rounded-full hover:bg-white/60'>
+									className='text-secondary hover:text-brand flex size-9 shrink-0 items-center justify-center rounded-full hover:bg-brand/10'>
 									<SkipForward className='size-5' />
 								</button>
 
@@ -247,7 +254,7 @@ export default function MusicCardMobile() {
 									<div
 										ref={progressRef}
 										onClick={handleSeek}
-										className='mt-1.5 h-1.5 cursor-pointer rounded-full bg-white/60'
+										className='mt-1.5 h-1.5 cursor-pointer rounded-full bg-card backdrop-blur'
 										role='slider'
 										aria-label='播放进度'
 										aria-valuemin={0}
@@ -270,7 +277,7 @@ export default function MusicCardMobile() {
 											onClick={() => handlePlayTrack(index)}
 											className={clsx(
 												'flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors',
-												isCurrent ? 'bg-brand/15 text-brand' : 'text-secondary hover:text-primary hover:bg-white/60'
+												isCurrent ? 'bg-brand/15 text-brand' : 'text-secondary hover:text-primary hover:bg-brand/10'
 											)}>
 											<span className='flex size-5 shrink-0 items-center justify-center'>
 												{isCurrent && isPlaying ? (

@@ -228,3 +228,43 @@
 	border: 1px solid rgba(0, 0, 0, 0.08);
 	border-radius: 8px;
 }
+
+/* 暗色模式适配 */
+:root[data-theme='dark'] .prose code {
+	border-color: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme='dark'] .prose pre {
+	border-color: rgba(255, 255, 255, 0.08);
+}
+
+:root[data-theme='dark'] .prose .code-block-copy-btn {
+	background: rgba(30, 30, 50, 0.9);
+	border-color: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme='dark'] .prose .code-block-copy-btn:hover {
+	background: rgba(40, 40, 60, 1);
+	border-color: rgba(255, 255, 255, 0.15);
+}
+
+:root[data-theme='dark'] .prose img {
+	border-color: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme='dark'] .prose blockquote {
+	background: rgba(255, 255, 255, 0.04);
+}
+
+:root[data-theme='dark'] .prose hr {
+	border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme='dark'] .prose th,
+:root[data-theme='dark'] .prose td {
+	border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+:root[data-theme='dark'] .prose iframe {
+	border-color: rgba(255, 255, 255, 0.1);
+}
