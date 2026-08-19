@@ -8,9 +8,10 @@ import { cn } from '@/lib/utils'
 type ScrollTopButtonProps = {
 	className?: string
 	delay?: number
+	style?: React.CSSProperties
 }
 
-export function ScrollTopButton({ className, delay }: ScrollTopButtonProps) {
+export function ScrollTopButton({ className, delay, style }: ScrollTopButtonProps) {
 	const [show, setShow] = useState(false)
 	const [active, setActive] = useState(false)
 	useEffect(() => {
@@ -41,6 +42,7 @@ export function ScrollTopButton({ className, delay }: ScrollTopButtonProps) {
 			whileTap={{ scale: 0.95 }}
 			onClick={handleClick}
 			aria-label='Scroll to top'
+			style={style}
 			className={cn('card text-secondary static gap-2 rounded-full p-3 text-sm', className)}>
 			<TopSVG className='w-7' />
 		</motion.button>

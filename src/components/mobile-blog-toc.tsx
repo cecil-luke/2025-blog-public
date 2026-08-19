@@ -16,7 +16,8 @@ export function MobileBlogToc({ toc }: { toc: TocItem[] }) {
 				type='button'
 				aria-label='打开文章目录'
 				onClick={() => setOpen(true)}
-				className='bg-card text-secondary fixed right-5 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 flex items-center gap-2 rounded-full border px-4 py-3 text-sm shadow-lg'>
+				className='bg-card text-secondary fixed right-6 z-50 flex items-center gap-2 rounded-full border px-4 py-3 text-sm shadow-lg'
+				style={{ bottom: 'calc(8rem + env(safe-area-inset-bottom))' }}>
 				<BookOpen className='size-4' />
 				目录
 			</button>
