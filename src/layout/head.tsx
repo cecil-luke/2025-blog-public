@@ -15,14 +15,14 @@ export default function Head() {
 
 			<link href='https://fonts.googleapis.cn/css2?family=Averia+Gruesa+Libre&display=swap' rel='stylesheet' />
 
-			<Script src='https://www.googletagmanager.com/gtag/js?id=G-ZNSFR7C9PM' />
+			<Script src='https://www.googletagmanager.com/gtag/js?id=G-BH7395Z46Y' />
 			<Script id='google-analytics'>
 				{`
           window.dataLayer = window.dataLayer || [];
           function gtag(){dataLayer.push(arguments);}
           gtag('js', new Date());
 
-          gtag('config', 'G-ZNSFR7C9PM');
+          gtag('config', 'G-BH7395Z46Y');
         `}
 			</Script>
 		</head>
