@@ -8,12 +8,16 @@ type GiscusCommentsProps = {
 }
 
 export function GiscusComments({ slug }: GiscusCommentsProps) {
+	// giscus 脚本挂载容器
 	const containerRef = useRef<HTMLDivElement>(null)
+	// 评论区 <section>，用于 IntersectionObserver 观测滚动进入视口
+	const sectionRef = useRef<HTMLElement>(null)
 	const [loadRequested, setLoadRequested] = useState(false)
 	const [loadError, setLoadError] = useState(false)
 	const [attempt, setAttempt] = useState(0)
 	const [giscusTheme, setGiscusTheme] = useState<'dark_dimmed' | 'noborder_light'>('noborder_light')
 
+	// 监听主题切换事件，动态更新 giscus 主题
 	useEffect(() => {
 		const handler = (e: Event) => {
 			const effective = (e as CustomEvent).detail as 'light' | 'dark'
@@ -24,6 +28,27 @@ export function GiscusComments({ slug }: GiscusCommentsProps) {
 		return () => window.removeEventListener('blog-theme-change', handler)
 	}, [])
 
+	// 滚动到文章末尾（评论区进入视口）时自动加载评论，提前 200px 触发避免空白等待
+	useEffect(() => {
+		if (loadRequested || !sectionRef.current) return
+
+		const observer = new IntersectionObserver(
+			entries => {
+				for (const entry of entries) {
+					if (entry.isIntersecting) {
+						setLoadRequested(true)
+						observer.disconnect() // 只触发一次，加载后不再重复监听
+					}
+				}
+			},
+			{ rootMargin: '200px 0px' }
+		)
+
+		observer.observe(sectionRef.current)
+		return () => observer.disconnect()
+	}, [loadRequested])
+
+	// 加载 giscus 脚本；loadRequested 为 true 后才注入，避免页面打开就请求
 	useEffect(() => {
 		if (!loadRequested || !containerRef.current) return
 
@@ -59,6 +84,7 @@ export function GiscusComments({ slug }: GiscusCommentsProps) {
 		}
 	}, [attempt, loadRequested, slug])
 
+	// 手动点击加载（备用，滚动自动加载未触发时仍可点击）
 	const handleLoad = () => {
 		setLoadRequested(true)
 		setLoadError(false)
@@ -70,7 +96,7 @@ export function GiscusComments({ slug }: GiscusCommentsProps) {
 	}
 
 	return (
-		<section aria-labelledby='comments-title' className='border-border bg-card mt-10 rounded-xl border p-5 sm:p-6'>
+		<section ref={sectionRef} aria-labelledby='comments-title' className='border-border bg-card mt-10 rounded-xl border p-5 sm:p-6'>
 			<div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
 				<div>
 					<h2 id='comments-title' className='text-lg font-semibold'>
