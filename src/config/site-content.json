@@ -1,6 +1,6 @@
 {
 	"meta": {
-		"title": "Lukias",
+		"title": "LUKIAS",
 		"description": "Lukias 的个人博客，记录后端技术开发、探索、生活笔记。",
 		"username": "Lukias"
 	},
@@ -61,8 +61,8 @@
 	"clockShowSeconds": true,
 	"summaryInContent": true,
 	"isCachePem": false,
-	"hideEditButton": false,
-	"hideConfigButton": false,
+	"hideEditButton": true,
+	"hideConfigButton": true,
 	"enableCategories": true,
 	"currentHatIndex": 12,
 	"hatFlipped": false,
