@@ -96,6 +96,15 @@
 - 触发一次后自动解除监听，不重复加载
 - 涉及文件：`src/components/giscus-comments.tsx`
 
+### 2026-09-09 首页设置按钮可隐藏 + 快捷键统一
+
+- **功能**：首页「写文章」旁的九点设置按钮支持隐藏，改用快捷键 `Ctrl/Cmd + ,` 打开网站设置弹窗（网站设置、主题色、首页卡片布局等），与全站编辑按钮的快捷键统一为同一个键。
+- **方案**：复用已有的 `hideEditButton` 开关范式——新增 `hideConfigButton` 配置项，在网站设置弹窗里提供复选框自行开关，默认不隐藏。藏掉按钮后快捷键仍可打开弹窗，弹窗内的复选框永远可见，不会自我锁死；万一快捷键也失效，GitHub 才是真正的 CMS，可直接改 `src/config/site-content.json` 提交恢复。
+- **快捷键统一**：首页原本同时绑了 `Ctrl/Cmd+L` 和 `Ctrl/Cmd+,` 两个键，现去掉 `L`（与浏览器「聚焦地址栏」冲突），全站只保留 `Ctrl/Cmd+,`——语义统一为「进入当前页面的编辑/管理态」：首页开设置弹窗、`/blog` 进批量编辑、`/share`/`/about` 等进各自编辑模式。
+- **守卫补齐**：首页快捷键监听补上 `!editing` 守卫与 `editing` 依赖，正在拖拽布局时按 `,` 不再弹出设置弹窗盖住操作，与 7 个内容页的编辑模式快捷键行为对称。
+- **生效方式**：在网站设置弹窗勾选对应开关 → 保存提交到 `site-content.json` → 等 Cloudflare OpenNext 重新部署后按钮消失；之后再按 `Ctrl/Cmd + ,` 即可重新打开设置。
+- 涉及文件：`src/config/site-content.json`（新增 `hideConfigButton`）、`src/app/(home)/write-buttons.tsx`（九点按钮按开关隐藏）、`src/app/(home)/page.tsx`（去 `L` 键、补 `!editing` 守卫）、`src/app/(home)/config-dialog/site-settings/index.tsx`（新增复选框）。
+
 ## 未完成开发计划
 
 > 以下为规划中的功能与优化方向，按优先级排序，均未开始实施。实施时以最新代码为准，每个功能可独立交付。

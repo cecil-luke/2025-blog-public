@@ -39,7 +39,7 @@ export default function Home() {
 
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
-			if ((e.ctrlKey || e.metaKey) && (e.key === 'l' || e.key === ',')) {
+			if (!editing && (e.ctrlKey || e.metaKey) && e.key === ',') {
 				e.preventDefault()
 				setConfigDialogOpen(true)
 			}
@@ -49,7 +49,7 @@ export default function Home() {
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown)
 		}
-	}, [setConfigDialogOpen])
+	}, [setConfigDialogOpen, editing])
 
 	return (
 		<>

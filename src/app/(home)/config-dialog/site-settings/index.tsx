@@ -95,6 +95,16 @@ export function SiteSettings({
 					/>
 					<span className='text-sm font-medium'>隐藏编辑按钮（编辑快捷键 ctrl/cmd + ,）</span>
 				</label>
+
+				<label className='flex items-center gap-2'>
+					<input
+						type='checkbox'
+						checked={formData.hideConfigButton ?? false}
+						onChange={e => setFormData({ ...formData, hideConfigButton: e.target.checked })}
+						className='accent-brand h-4 w-4 rounded'
+					/>
+					<span className='text-sm font-medium'>隐藏首页设置按钮（快捷键 ctrl/cmd + ,）</span>
+				</label>
 			</div>
 			<div className='flex gap-3'>
 				<label className='flex items-center gap-2'>
