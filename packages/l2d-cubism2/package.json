@@ -1,0 +1,10 @@
+{
+	"name": "@lukias/l2d-cubism2",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"exports": {
+		".": "./src/package.ts"
+	},
+	"types": "./src/package.ts"
+}

@@ -2,9 +2,11 @@ import { NextConfig } from 'next'
 import { codeInspectorPlugin } from 'code-inspector-plugin'
 
 const nextConfig: NextConfig = {
+	distDir: process.env.NEXT_DIST_DIR || '.next',
 	devIndicators: false,
 	reactStrictMode: false,
 	reactCompiler: true,
+	transpilePackages: ['@lukias/l2d-cubism2'],
 	pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'],
 	typescript: {
 		ignoreBuildErrors: true

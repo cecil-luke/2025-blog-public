@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
-import type { MenuItem, Widget } from 'l2d-widget'
+import type { MenuItem, Widget } from '@lukias/l2d-cubism2'
 import { useSize } from '@/hooks/use-size'
 import { useConfigStore } from '@/app/(home)/stores/config-store'
 
@@ -21,9 +21,6 @@ const DEFAULT_MODELS: Live2DModelConfig[] = [
 	{ path: '/live2d/models/HK416-1-normal/model.json', name: 'HK416' }
 ]
 
-const CUBISM_CORE_URL = 'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js'
-let cubismCorePromise: Promise<void> | null = null
-
 // 展示看板娘的路由：首页 + 下列路由前缀
 const TARGET_ROUTE_PREFIXES = ['/blog', '/projects', '/about', '/share', '/bloggers']
 
@@ -33,21 +30,15 @@ const AUTO_SWITCH_INTERVAL = 120_000
 // 看板娘垂直位置：七分之三，配合 translateY(-50%) 居中
 const WIDGET_TOP = '42.857%'
 
-/**
- * l2d-widget@0.1.2 内置的 Cubism 4（moc3）运行时内核是坏的：加载任意
- * `.model3.json`（包括官方 Haru / Hiyori 等）都会在内部抛出
- * `TypeError: g[y[((n + 36) >> 2)]] is not a function`，且抛错发生在内核自己的
- * 异步回调里，业务代码无法捕获，结果是模型永远卡在“切换中”。
- * 所以这里在运行时把 Cubism 4 模型过滤掉，保证看板娘始终可用。
- */
-let warnedAboutCubism4 = false
+// 本地 Cubism 2 专用包不支持 .model3.json，提前过滤避免加载失败。
+let warnedAboutUnsupportedModels = false
 
 function filterSupportedModels(list: Live2DModelConfig[]): Live2DModelConfig[] {
 	const supported = list.filter(model => !model.path.endsWith('.model3.json'))
-	if (!warnedAboutCubism4 && supported.length !== list.length) {
-		warnedAboutCubism4 = true
+	if (!warnedAboutUnsupportedModels && supported.length !== list.length) {
+		warnedAboutUnsupportedModels = true
 		console.warn(
-			'[Live2DWidget] l2d-widget 的 Cubism 4 内核不可用，已忽略：',
+			'[Live2DWidget] 本地 Cubism 2 专用包不支持 model3.json，已忽略：',
 			list.filter(model => model.path.endsWith('.model3.json')).map(model => model.name)
 		)
 	}
@@ -58,29 +49,14 @@ function isTargetRoute(pathname: string): boolean {
 	return pathname === '/' || TARGET_ROUTE_PREFIXES.some(prefix => pathname.startsWith(prefix))
 }
 
-/**
- * l2d-widget 在生产构建中会在模块求值阶段直接读取全局 Live2DCubismCore。
- * 先加载官方 Core，避免打包后初始化顺序变化导致的 ReferenceError。
- */
-function loadLive2DCubismCore(): Promise<void> {
-	const live2dWindow = window as Window & { Live2DCubismCore?: unknown }
-	if (live2dWindow.Live2DCubismCore) return Promise.resolve()
-	if (cubismCorePromise) return cubismCorePromise
+function scheduleIdle(callback: () => void, timeout: number): () => void {
+	if (typeof window.requestIdleCallback === 'function') {
+		const handle = window.requestIdleCallback(callback, { timeout })
+		return () => window.cancelIdleCallback(handle)
+	}
 
-	cubismCorePromise = new Promise((resolve, reject) => {
-		const script = document.createElement('script')
-		script.src = CUBISM_CORE_URL
-		script.async = true
-		script.crossOrigin = 'anonymous'
-		script.onload = () => resolve()
-		script.onerror = () => {
-			cubismCorePromise = null
-			reject(new Error('Live2D Cubism Core 加载失败'))
-		}
-		document.head.appendChild(script)
-	})
-
-	return cubismCorePromise
+	const handle = window.setTimeout(callback, timeout)
+	return () => window.clearTimeout(handle)
 }
 
 /** 找到 l2d-widget 创建的 container 并覆写样式为左侧固定位置 */
@@ -123,7 +99,7 @@ export default function Live2DWidget() {
 	const widgetRef = useRef<{
 		destroy?: () => Promise<void>
 		switchModel?: (index: number) => Promise<void>
-		l2d?: { resize?: () => void }
+		l2d?: { resize?: () => void; pause?: () => void; resume?: () => void }
 	} | null>(null)
 	const autoSwitchTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 	const currentModelIndexRef = useRef(0)
@@ -159,6 +135,17 @@ export default function Live2DWidget() {
 		}
 	}, [])
 
+	// 页面切到后台时暂停 WebGL 渲染，回来后继续，降低 CPU/GPU 和电量消耗。
+	useEffect(() => {
+		const handleVisibilityChange = () => {
+			if (document.hidden) widgetRef.current?.l2d?.pause?.()
+			else widgetRef.current?.l2d?.resume?.()
+		}
+
+		document.addEventListener('visibilitychange', handleVisibilityChange)
+		return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+	}, [])
+
 	useEffect(() => {
 		if (!shouldRender) {
 			// 清理：销毁 widget（async 但不需要等待——destroy 会做完整资源回收）
@@ -174,24 +161,35 @@ export default function Live2DWidget() {
 		}
 
 		let cancelled = false
+		let cancelInit: (() => void) | null = null
+		let cancelPreload: (() => void) | null = null
 
 		async function initWidget() {
 			try {
-				await loadLive2DCubismCore()
-				if (cancelled) return
-
 				// 动态 import 避免 SSR 问题
-				const { createWidget } = await import('l2d-widget')
+				const { createWidget, preloadModel } = await import('@lukias/l2d-cubism2')
 
 				if (cancelled) return
+
+				const schedulePreload = () => {
+					if (cancelled || models.length < 2) return
+					cancelPreload?.()
+					cancelPreload = scheduleIdle(() => {
+						const next = models[(currentModelIndexRef.current + 1) % models.length]
+						if (next) void preloadModel(next.path).catch(() => undefined)
+					}, 4000)
+				}
 
 				// 统一切换入口：菜单按钮与定时器都走这里，保证索引一致
 				const switchTo = (index: number) => {
 					const next = ((index % models.length) + models.length) % models.length
 					currentModelIndexRef.current = next
-					widgetRef.current?.switchModel?.(next)?.catch(err => {
-						console.error('[Live2DWidget] 切换模型失败:', err)
-					})
+					widgetRef.current
+						?.switchModel?.(next)
+						?.then(() => schedulePreload())
+						.catch(err => {
+							console.error('[Live2DWidget] 切换模型失败:', err)
+						})
 				}
 
 				// 只保留“切换模型”和“休息”，去掉默认的 About（详细信息）
@@ -249,7 +247,9 @@ export default function Live2DWidget() {
 					})
 				}
 
-				// 自动切换定时器——每分钟换一个模型
+				schedulePreload()
+
+				// 自动切换定时器——每两分钟换一个模型
 				currentModelIndexRef.current = 0
 				if (autoSwitchTimerRef.current) clearInterval(autoSwitchTimerRef.current)
 				if (models.length > 1) {
@@ -262,10 +262,15 @@ export default function Live2DWidget() {
 			}
 		}
 
-		initWidget()
+		// 等首屏渲染完再初始化模型，避免下载模型资源阻塞页面出现。
+		cancelInit = scheduleIdle(() => {
+			void initWidget()
+		}, 1200)
 
 		return () => {
 			cancelled = true
+			cancelInit?.()
+			cancelPreload?.()
 			if (autoSwitchTimerRef.current) {
 				clearInterval(autoSwitchTimerRef.current)
 				autoSwitchTimerRef.current = null

@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@lukias/l2d-cubism2':
+        specifier: workspace:*
+        version: link:packages/l2d-cubism2
       '@opennextjs/cloudflare':
         specifier: ^1.14.4
         version: 1.14.4(next@16.0.10(@babel/core@7.28.5(supports-color@10.2.2))(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.0(react@19.2.1))(react@19.2.1))(supports-color@10.2.2)(wrangler@4.53.0)
@@ -29,9 +32,6 @@ importers:
       katex:
         specifier: ^0.16.27
         version: 0.16.27
-      l2d-widget:
-        specifier: ^0.1.2
-        version: 0.1.2
       lucide-react:
         specifier: ^0.553.0
         version: 0.553.0(react@19.2.1)
@@ -111,6 +111,8 @@ importers:
       wrangler:
         specifier: ^4.53.0
         version: 4.53.0
+
+  packages/l2d-cubism2: {}
 
 packages:
 
@@ -3145,9 +3147,6 @@ packages:
   kleur@4.1.5:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
     engines: {node: '>=6'}
-
-  l2d-widget@0.1.2:
-    resolution: {integrity: sha512-G96NqlH5qBIy6eNPo5eXKRFKEFJ6jHX9dKB9W9qmrZ1PXkbAkeOvoKal3a0zWxr3DkctodVMNwmXydTpfw005g==}
 
   launch-ide@1.2.0:
     resolution: {integrity: sha512-7nXSPQOt3b2JT52Ge8jp4miFcY+nrUEZxNLWBzrEfjmByDTb9b5ytqMSwGhsNwY6Cntwop+6n7rWIFN0+S8PTw==}
@@ -8027,8 +8026,6 @@ snapshots:
       commander: 8.3.0
 
   kleur@4.1.5: {}
-
-  l2d-widget@0.1.2: {}
 
   launch-ide@1.2.0:
     dependencies:

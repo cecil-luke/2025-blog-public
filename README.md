@@ -112,9 +112,12 @@
 - **位置与缩放**：看板娘固定在左侧空白区域，不随页面滚动；浏览器页面放大或缩小时，WebGL 画布会按新的像素比重新适配，避免模型发虚。
 - **兼容处理**：运行时过滤不可用的 Cubism 4 `model3.json`，避免第三方组件内核异常导致看板娘卡死。
 - **生产修复**：生产构建前显式加载官方 Cubism Core，修复自动部署后 `Live2DCubismCore is not defined` 导致看板娘不显示的问题。
-- **资源清理**：模型全部改为站内自托管，仅保留 Rem、Kar98k、HK416 三个模型；删除不再使用的 9 个模型、残留目录及未引用的预览图、贴图和语音文件，模型资源由约 72 MB 降至约 11 MB。
+- **本地专用包**：将 `l2d` / `l2d-widget` 的 Cubism 2 源码集成到当前仓库的 `packages/l2d-cubism2`，移除 Cubism 4/6、`Live2DCubismCore` 和 `.model3.json` 依赖；开发与生产构建均直接分析、编译该源码，不再依赖第三方 Core CDN。
+- **资源清理**：模型全部改为站内自托管，仅保留 Rem、Kar98k、HK416 三个模型；删除不再使用的 9 个模型、残留目录及未引用的预览图、贴图和语音文件。
+- **加载优化**：Rem 纹理从 2048 降至 1024，全部纹理转为 WebP；模型资源由约 72 MB 降至约 5 MB。模型首屏改为页面空闲后初始化，当前模型加载后预加载下一个模型，页面切到后台时暂停 WebGL 渲染。
+- **缓存优化**：为 `/live2d/models/*` 增加 7 天浏览器/边缘缓存与 `stale-while-revalidate`，降低重复访问时的模型下载耗时。
 - **类型修复**：修正首页卡片布局偏移类型，使 `offsetX`、`offsetY` 支持默认的 `null` 值。
-- 涉及文件：`src/components/live2d-widget.tsx`、`src/config/site-content.json`、`src/layout/index.tsx`、`src/app/(home)/stores/config-store.ts`、`public/live2d/models/`。
+- 涉及文件：`packages/l2d-cubism2/`、`src/components/live2d-widget.tsx`、`src/config/site-content.json`、`src/layout/index.tsx`、`src/app/(home)/stores/config-store.ts`、`public/live2d/models/`、`public/_headers`。
 
 ## 未完成开发计划
 
