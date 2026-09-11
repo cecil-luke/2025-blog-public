@@ -12,6 +12,7 @@ import MusicCard from '@/components/music-card'
 import MusicCardMobile from '@/components/music-card-mobile'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { SearchPaletteContainer } from '@/components/search-palette-container'
+import Live2DWidget from '@/components/live2d-widget'
 import { Search } from 'lucide-react'
 
 export default function Layout({ children }: PropsWithChildren) {
@@ -84,6 +85,7 @@ export default function Layout({ children }: PropsWithChildren) {
 			{maxSM && init && <ScrollTopButton className='bg-brand/20 fixed right-6 z-50 shadow-md' style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }} />}
 
 			<SearchPaletteContainer />
+			<Live2DWidget />
 		</>
 	)
 }

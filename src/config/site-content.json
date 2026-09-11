@@ -14,12 +14,7 @@
 		"colorCard": "#ffffff99",
 		"colorArticle": "#ffffffcc"
 	},
-	"backgroundColors": [
-		"#A17AE4",
-		"#9B6DDA",
-		"#060871",
-		"#441CED"
-	],
+	"backgroundColors": ["#A17AE4", "#9B6DDA", "#060871", "#441CED"],
 	"artImages": [
 		{
 			"id": "cat",
@@ -70,5 +65,20 @@
 	"beian": {
 		"text": "",
 		"link": ""
-	}
+	},
+	"enableLive2DWidget": true,
+	"live2dModels": [
+		{
+			"path": "/live2d/models/rem/model.json",
+			"name": "Rem"
+		},
+		{
+			"path": "/live2d/models/Kar98k-normal/model.json",
+			"name": "Kar98k"
+		},
+		{
+			"path": "/live2d/models/HK416-1-normal/model.json",
+			"name": "HK416"
+		}
+	]
 }

@@ -105,6 +105,16 @@
 - **生效方式**：在网站设置弹窗勾选对应开关 → 保存提交到 `site-content.json` → 等 Cloudflare OpenNext 重新部署后按钮消失；之后再按 `Ctrl/Cmd + ,` 即可重新打开设置。
 - 涉及文件：`src/config/site-content.json`（新增 `hideConfigButton`）、`src/app/(home)/write-buttons.tsx`（九点按钮按开关隐藏）、`src/app/(home)/page.tsx`（去 `L` 键、补 `!editing` 守卫）、`src/app/(home)/config-dialog/site-settings/index.tsx`（新增复选框）。
 
+### 2026-09-11 Live2D 看板娘
+
+- **功能**：新增自托管 Live2D 看板娘，在首页及 `/blog`、`/projects`、`/about`、`/share`、`/bloggers` 页面左侧固定展示；桌面端可用，移动端自动隐藏。
+- **交互**：支持手动切换模型与休息状态，默认每两分钟自动切换一次；刷新后按 `Rem → Kar98k → HK416` 的倒序循环。
+- **位置与缩放**：看板娘固定在左侧空白区域，不随页面滚动；浏览器页面放大或缩小时，WebGL 画布会按新的像素比重新适配，避免模型发虚。
+- **兼容处理**：运行时过滤不可用的 Cubism 4 `model3.json`，避免第三方组件内核异常导致看板娘卡死。
+- **资源清理**：模型全部改为站内自托管，仅保留 Rem、Kar98k、HK416 三个模型；删除不再使用的 9 个模型、残留目录及未引用的预览图、贴图和语音文件，模型资源由约 72 MB 降至约 11 MB。
+- **类型修复**：修正首页卡片布局偏移类型，使 `offsetX`、`offsetY` 支持默认的 `null` 值。
+- 涉及文件：`src/components/live2d-widget.tsx`、`src/config/site-content.json`、`src/layout/index.tsx`、`src/app/(home)/stores/config-store.ts`、`public/live2d/models/`。
+
 ## 未完成开发计划
 
 > 以下为规划中的功能与优化方向，按优先级排序，均未开始实施。实施时以最新代码为准，每个功能可独立交付。
