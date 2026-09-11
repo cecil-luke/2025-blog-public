@@ -111,6 +111,7 @@
 - **交互**：支持手动切换模型与休息状态，默认每两分钟自动切换一次；刷新后按 `Rem → Kar98k → HK416` 的倒序循环。
 - **位置与缩放**：看板娘固定在左侧空白区域，不随页面滚动；浏览器页面放大或缩小时，WebGL 画布会按新的像素比重新适配，避免模型发虚。
 - **兼容处理**：运行时过滤不可用的 Cubism 4 `model3.json`，避免第三方组件内核异常导致看板娘卡死。
+- **生产修复**：生产构建前显式加载官方 Cubism Core，修复自动部署后 `Live2DCubismCore is not defined` 导致看板娘不显示的问题。
 - **资源清理**：模型全部改为站内自托管，仅保留 Rem、Kar98k、HK416 三个模型；删除不再使用的 9 个模型、残留目录及未引用的预览图、贴图和语音文件，模型资源由约 72 MB 降至约 11 MB。
 - **类型修复**：修正首页卡片布局偏移类型，使 `offsetX`、`offsetY` 支持默认的 `null` 值。
 - 涉及文件：`src/components/live2d-widget.tsx`、`src/config/site-content.json`、`src/layout/index.tsx`、`src/app/(home)/stores/config-store.ts`、`public/live2d/models/`。

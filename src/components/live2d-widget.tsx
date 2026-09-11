@@ -21,6 +21,9 @@ const DEFAULT_MODELS: Live2DModelConfig[] = [
 	{ path: '/live2d/models/HK416-1-normal/model.json', name: 'HK416' }
 ]
 
+const CUBISM_CORE_URL = 'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js'
+let cubismCorePromise: Promise<void> | null = null
+
 // 展示看板娘的路由：首页 + 下列路由前缀
 const TARGET_ROUTE_PREFIXES = ['/blog', '/projects', '/about', '/share', '/bloggers']
 
@@ -53,6 +56,31 @@ function filterSupportedModels(list: Live2DModelConfig[]): Live2DModelConfig[] {
 
 function isTargetRoute(pathname: string): boolean {
 	return pathname === '/' || TARGET_ROUTE_PREFIXES.some(prefix => pathname.startsWith(prefix))
+}
+
+/**
+ * l2d-widget 在生产构建中会在模块求值阶段直接读取全局 Live2DCubismCore。
+ * 先加载官方 Core，避免打包后初始化顺序变化导致的 ReferenceError。
+ */
+function loadLive2DCubismCore(): Promise<void> {
+	const live2dWindow = window as Window & { Live2DCubismCore?: unknown }
+	if (live2dWindow.Live2DCubismCore) return Promise.resolve()
+	if (cubismCorePromise) return cubismCorePromise
+
+	cubismCorePromise = new Promise((resolve, reject) => {
+		const script = document.createElement('script')
+		script.src = CUBISM_CORE_URL
+		script.async = true
+		script.crossOrigin = 'anonymous'
+		script.onload = () => resolve()
+		script.onerror = () => {
+			cubismCorePromise = null
+			reject(new Error('Live2D Cubism Core 加载失败'))
+		}
+		document.head.appendChild(script)
+	})
+
+	return cubismCorePromise
 }
 
 /** 找到 l2d-widget 创建的 container 并覆写样式为左侧固定位置 */
@@ -149,6 +177,9 @@ export default function Live2DWidget() {
 
 		async function initWidget() {
 			try {
+				await loadLive2DCubismCore()
+				if (cancelled) return
+
 				// 动态 import 避免 SSR 问题
 				const { createWidget } = await import('l2d-widget')
 
