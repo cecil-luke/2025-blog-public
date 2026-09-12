@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import dayjs from 'dayjs'
 import { motion } from 'motion/react'
 import { BlogPreview } from '@/components/blog-preview'
 import { loadBlog, type BlogConfig } from '@/lib/load-blog'
 import { useReadArticles } from '@/hooks/use-read-articles'
+import { useConfigStore } from '@/app/(home)/stores/config-store'
 import LiquidGrass from '@/components/liquid-grass'
 import { ReadingProgress } from '@/components/reading-progress'
 
@@ -15,6 +16,8 @@ export default function Page() {
 	const slug = Array.isArray(params?.id) ? params.id[0] : params?.id || ''
 	const router = useRouter()
 	const { markAsRead } = useReadArticles()
+	const { siteContent } = useConfigStore()
+	const hideEditButton = siteContent.hideEditButton ?? false
 
 	const [blog, setBlog] = useState<{ config: BlogConfig; markdown: string; cover?: string } | null>(null)
 	const [error, setError] = useState<string | null>(null)
@@ -50,9 +53,23 @@ export default function Page() {
 	const date = useMemo(() => dayjs(blog?.config.date).format('YYYY年 M月 D日'), [blog?.config.date])
 	const tags = blog?.config.tags || []
 
-	const handleEdit = () => {
+	const handleEdit = useCallback(() => {
 		router.push(`/write/${slug}`)
-	}
+	}, [router, slug])
+
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+				e.preventDefault()
+				handleEdit()
+			}
+		}
+
+		window.addEventListener('keydown', handleKeyDown)
+		return () => {
+			window.removeEventListener('keydown', handleKeyDown)
+		}
+	}, [handleEdit])
 
 	if (!slug) {
 		return <div className='text-secondary flex h-full items-center justify-center text-sm'>无效的链接</div>
@@ -86,15 +103,17 @@ export default function Page() {
 			/>
 			<ReadingProgress />
 
-			<motion.button
-				initial={{ opacity: 0, scale: 0.6 }}
-				animate={{ opacity: 1, scale: 1 }}
-				whileHover={{ scale: 1.05 }}
-				whileTap={{ scale: 0.95 }}
-				onClick={handleEdit}
-				className='bg-card absolute top-4 right-6 z-10 rounded-xl border px-6 py-2 text-sm backdrop-blur-sm transition-colors max-sm:hidden'>
-				编辑
-			</motion.button>
+			{!hideEditButton && (
+				<motion.button
+					initial={{ opacity: 0, scale: 0.6 }}
+					animate={{ opacity: 1, scale: 1 }}
+					whileHover={{ scale: 1.05 }}
+					whileTap={{ scale: 0.95 }}
+					onClick={handleEdit}
+					className='bg-card absolute top-4 right-6 z-10 rounded-xl border px-6 py-2 text-sm backdrop-blur-sm transition-colors max-sm:hidden'>
+					编辑
+				</motion.button>
+			)}
 
 			{slug === 'liquid-grass' && <LiquidGrass />}
 		</>
