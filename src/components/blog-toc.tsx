@@ -2,7 +2,7 @@
 
 import clsx from 'clsx'
 import { motion } from 'motion/react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 type TocItem = {
 	id: string
@@ -17,9 +17,20 @@ type BlogTocProps = {
 
 export function BlogToc({ toc, delay = 0 }: BlogTocProps) {
 	const [activeIds, setActiveIds] = useState<Set<string>>(new Set())
+	const activeRef = useRef<HTMLAnchorElement | null>(null)
+
 	const minActiveId = useMemo(() => {
 		return Array.from(activeIds).sort((a, b) => toc.findIndex(item => item.id === a) - toc.findIndex(item => item.id === b))[0]
 	}, [activeIds, toc])
+
+	// When the active heading changes, auto-scroll the TOC list to keep it visible
+	useEffect(() => {
+		if (!minActiveId) return
+		activeRef.current?.scrollIntoView({
+			behavior: 'smooth',
+			block: 'nearest'
+		})
+	}, [minActiveId])
 
 	useEffect(() => {
 		if (toc.length === 0) return
@@ -71,6 +82,7 @@ export function BlogToc({ toc, delay = 0 }: BlogTocProps) {
 					<a
 						key={`${item.id}-${index}`}
 						href={`#${item.id}`}
+						ref={item.id === minActiveId ? activeRef : undefined}
 						className={clsx('hover:text-brand relative block pl-3 transition-colors', item.id === minActiveId && 'text-brand')}
 						style={{ paddingLeft: (item.level - 1) * 8 }}>
 						{item.text}
