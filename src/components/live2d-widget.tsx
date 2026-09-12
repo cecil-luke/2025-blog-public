@@ -24,8 +24,8 @@ const DEFAULT_MODELS: Live2DModelConfig[] = [
 // 展示看板娘的路由：首页 + 下列路由前缀
 const TARGET_ROUTE_PREFIXES = ['/blog', '/projects', '/about', '/share', '/bloggers']
 
-// 自动切换间隔（毫秒）—— 每两分钟
-const AUTO_SWITCH_INTERVAL = 120_000
+// 自动切换间隔（毫秒）—— 每五分钟
+const AUTO_SWITCH_INTERVAL = 5 * 60 * 1000
 
 // 看板娘垂直位置：七分之三，配合 translateY(-50%) 居中
 const WIDGET_TOP = '42.857%'
@@ -249,7 +249,7 @@ export default function Live2DWidget() {
 
 				schedulePreload()
 
-				// 自动切换定时器——每两分钟换一个模型
+				// 自动切换定时器——每五分钟换一个模型
 				currentModelIndexRef.current = 0
 				if (autoSwitchTimerRef.current) clearInterval(autoSwitchTimerRef.current)
 				if (models.length > 1) {
