@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import type { Picture } from '../page'
 import { thumbUrl } from './picture-thumb'
@@ -219,6 +219,67 @@ const formatUploadedAt = (uploadedAt?: string) => {
 	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
+// 原图预加载:与墙上缩略图队列分开,避免开场动画被原图抢走带宽。
+// 同一 URL 只打一次,命中后弹层 <img> 走内存/磁盘缓存。
+const originalPreloads = new Map<string, Promise<void>>()
+
+function preloadOriginal(url: string, priority: 'high' | 'low' = 'low'): Promise<void> {
+	const existing = originalPreloads.get(url)
+	if (existing) return existing
+	const task = new Promise<void>(resolve => {
+		const img = new Image()
+		img.fetchPriority = priority
+		img.onload = () => resolve()
+		img.onerror = () => {
+			originalPreloads.delete(url)
+			resolve()
+		}
+		img.src = url
+	})
+	originalPreloads.set(url, task)
+	return task
+}
+
+const ZOOM_VIEW_PAD = 96
+const ZOOM_SIZE_CAP = 1200
+const ZOOM_BORDER = 8
+
+function fitZoomBox(ratio: number) {
+	const maxW = window.innerWidth - ZOOM_VIEW_PAD
+	const maxH = window.innerHeight - ZOOM_VIEW_PAD
+	let w: number
+	let h: number
+	if (ratio >= 1) {
+		w = Math.min(maxW, ZOOM_SIZE_CAP)
+		h = w / ratio
+		if (h > maxH) {
+			h = maxH
+			w = h * ratio
+		}
+	} else {
+		h = Math.min(maxH, ZOOM_SIZE_CAP)
+		w = h * ratio
+		if (w > maxW) {
+			w = maxW
+			h = w / ratio
+		}
+	}
+	return { w, h }
+}
+
+function readCellAspect(index: number): number | null {
+	const cell = document.querySelectorAll('[data-wall-cell]')[index]
+	const img = cell?.querySelector('img')
+	if (!(img instanceof HTMLImageElement) || !img.naturalWidth || !img.naturalHeight) return null
+	return img.naturalWidth / img.naturalHeight
+}
+
+function isWallThumbReady(index: number) {
+	const cell = document.querySelectorAll('[data-wall-cell]')[index]
+	const img = cell?.querySelector('img')
+	return img instanceof HTMLImageElement && img.complete && img.naturalWidth > 0
+}
+
 function PhotoCell({
 	item,
 	pos,
@@ -251,6 +312,7 @@ function PhotoCell({
 	// 墙展示用缩略图,缩略图缺失时回退原图;放大查看(PhotoZoom)仍走原图
 	const [imgSrc, setImgSrc] = useState(() => thumbUrl(item.url))
 	const thumbFailedRef = useRef(false)
+	const [thumbLoaded, setThumbLoaded] = useState(false)
 
 	useEffect(() => {
 		const id = queue.register(() => setSrcReady(true))
@@ -260,6 +322,11 @@ function PhotoCell({
 			idRef.current = null
 		}
 	}, [queue])
+
+	useEffect(() => {
+		if (hover !== 0 || !thumbLoaded) return
+		void preloadOriginal(item.url)
+	}, [hover, thumbLoaded, item.url])
 
 	const active = popped || skip
 
@@ -288,6 +355,7 @@ function PhotoCell({
 					src={imgSrc}
 					decoding='async'
 					onLoad={() => {
+						setThumbLoaded(true)
 						if (idRef.current !== null) queue.markLoaded(idRef.current)
 					}}
 					onError={() => {
@@ -327,27 +395,39 @@ function PhotoCell({
 	)
 }
 
-// 放大查看:背景 + 大图 + 可拖动书签标签 + 上一张/下一张(首尾循环)+ 键盘 ←/→/Esc
+// 放大查看:背景 + 缩略图兜底 + 原图淡入 + 可拖动书签标签 + 上一张/下一张(首尾循环)+ 键盘 ←/→/Esc
 function PhotoZoom({
 	item,
 	index,
-	total,
+	items,
 	onClose,
 	onPrev,
 	onNext
 }: {
 	item: WallItem
 	index: number
-	total: number
+	items: WallItem[]
 	onClose: () => void
 	onPrev: () => void
 	onNext: () => void
 }) {
+	const total = items.length
 	const [labelPos, setLabelPos] = useState<{ right: number; top: number } | null>(null)
 	const [closing, setClosing] = useState(false)
 	const [exit, setExit] = useState<{ x: number; y: number; scale: number } | null>(null)
+	const [box, setBox] = useState<{ w: number; h: number } | null>(() => {
+		if (typeof window === 'undefined') return null
+		const ratio = readCellAspect(index)
+		return ratio ? fitZoomBox(ratio) : null
+	})
+	const [thumbSrc, setThumbSrc] = useState(() => thumbUrl(item.url))
+	const [fullReady, setFullReady] = useState(false)
+	const [showLoading, setShowLoading] = useState(false)
+	const [fullFailed, setFullFailed] = useState(false)
 	const backdropRef = useRef<HTMLDivElement>(null)
 	const imgWrapRef = useRef<HTMLDivElement>(null)
+	const thumbImgRef = useRef<HTMLImageElement>(null)
+	const fullImgRef = useRef<HTMLImageElement>(null)
 
 	// 关闭:像 macOS 程序缩回程序坞一样,大图飞回墙里对应照片的位置再消失
 	const close = () => {
@@ -378,17 +458,45 @@ function PhotoZoom({
 		return () => window.removeEventListener('keydown', onKey)
 	}, [close, onPrev, onNext])
 
-	// 标签每次回到固定初始位置(照片右边,一半压图一半在外),图加载后按真实尺寸定位
-	const placeLabel = (naturalW: number, naturalH: number) => {
-		const maxW = window.innerWidth - 96
-		const maxH = window.innerHeight - 96
-		const scale = Math.min(1, maxW / naturalW, maxH / naturalH)
-		const w = naturalW * scale + 16
+	useEffect(() => {
+		void preloadOriginal(item.url, 'high')
+		if (total < 2) return
+		const neighbors = [index === 0 ? total - 1 : index - 1, (index + 1) % total]
+		for (const i of neighbors) {
+			if (i === index || !isWallThumbReady(i)) continue
+			void preloadOriginal(items[i].url)
+		}
+	}, [item.url, index, items, total])
+
+	useEffect(() => {
+		if (fullReady || fullFailed) {
+			setShowLoading(false)
+			return
+		}
+		const timer = window.setTimeout(() => setShowLoading(true), 150)
+		return () => window.clearTimeout(timer)
+	}, [fullReady, fullFailed])
+
+	useEffect(() => {
+		if (!box || closing) return
+		const w = box.w + ZOOM_BORDER * 2
 		setLabelPos({
 			right: Math.max(16, (window.innerWidth - w) / 2 - 100),
 			top: window.innerHeight / 2 - 75
 		})
+	}, [box, closing])
+
+	const applyRatio = (naturalW: number, naturalH: number) => {
+		if (!naturalW || !naturalH) return
+		setBox(prev => prev ?? fitZoomBox(naturalW / naturalH))
 	}
+
+	useLayoutEffect(() => {
+		const thumb = thumbImgRef.current
+		if (thumb?.complete) applyRatio(thumb.naturalWidth, thumb.naturalHeight)
+		const full = fullImgRef.current
+		if (full?.complete && full.naturalWidth > 0) setFullReady(true)
+	}, [item.url, thumbSrc])
 
 	return (
 		<>
@@ -410,18 +518,46 @@ function PhotoZoom({
 				onAnimationComplete={() => {
 					if (closing) onClose()
 				}}
-				style={{ zIndex: 80 }}
-				className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'>
+				style={{
+					zIndex: 80,
+					width: box?.w,
+					height: box?.h,
+					visibility: box ? 'visible' : 'hidden'
+				}}
+				className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-lg border-8 border-white shadow-2xl'>
 				<img
-					data-zoom-img
-					src={item.url}
+					ref={thumbImgRef}
+					src={thumbSrc}
+					alt=''
+					aria-hidden='true'
 					draggable={false}
+					decoding='async'
 					onLoad={event => {
 						const img = event.currentTarget
-						placeLabel(img.naturalWidth, img.naturalHeight)
+						applyRatio(img.naturalWidth, img.naturalHeight)
 					}}
-					className='max-h-[calc(100vh-96px)] max-w-[calc(100vw-96px)] rounded-lg border-8 border-white object-contain shadow-2xl select-none'
+					onError={() => {
+						if (thumbSrc !== item.url) setThumbSrc(item.url)
+					}}
+					className='absolute inset-0 h-full w-full object-contain select-none'
 				/>
+				<img
+					ref={fullImgRef}
+					data-zoom-img
+					src={item.url}
+					alt=''
+					draggable={false}
+					decoding='async'
+					fetchPriority='high'
+					onLoad={() => setFullReady(true)}
+					onError={() => setFullFailed(true)}
+					className={`absolute inset-0 h-full w-full object-contain select-none transition-opacity duration-300 ${fullReady ? 'opacity-100' : 'opacity-0'}`}
+				/>
+				{showLoading && !fullReady && !fullFailed && (
+					<div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
+						<div className='h-8 w-8 animate-spin rounded-full border-2 border-white/40 border-t-white' />
+					</div>
+				)}
 			</motion.div>
 			{!closing && item.description && labelPos && (
 				<motion.div
@@ -725,7 +861,7 @@ function Wall({ items, speed, gap, cell, isEditMode = false, onDeleteSingle, onR
 					key={zoomIdx}
 					item={items[zoomIdx]}
 					index={zoomIdx}
-					total={items.length}
+					items={items}
 					onClose={() => setZoomIdx(null)}
 					onPrev={() => setZoomIdx(zoomIdx === 0 ? items.length - 1 : zoomIdx - 1)}
 					onNext={() => setZoomIdx((zoomIdx + 1) % items.length)}
