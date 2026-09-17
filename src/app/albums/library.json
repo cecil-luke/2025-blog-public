@@ -1,4 +1,47 @@
 {
-	"photos": [],
-	"albums": []
+	"photos": [
+		{
+			"id": "1789666773272-c5bdb04efa7608",
+			"url": "/images/albums/93789327d6827b69.png",
+			"uploadedAt": "2026-09-17T17:39:33.272Z",
+			"caption": "测试照片",
+			"takenAt": "2026-09-16T16:00:00.000Z"
+		},
+		{
+			"id": "1789666773272-38854e1e9de0d8",
+			"url": "/images/albums/a30f19f989781e42.webp",
+			"uploadedAt": "2026-09-17T17:39:33.272Z",
+			"caption": "测试照片",
+			"takenAt": "2026-09-16T16:00:00.000Z"
+		},
+		{
+			"id": "1789666773272-da46ff7f8fd2e",
+			"url": "/images/albums/77ba9a4188786e15.webp",
+			"uploadedAt": "2026-09-17T17:39:33.272Z",
+			"caption": "测试照片",
+			"takenAt": "2026-09-16T16:00:00.000Z"
+		},
+		{
+			"id": "1789666773272-90ef22a79688d8",
+			"url": "/images/albums/f8e9d912651bd95c.webp",
+			"uploadedAt": "2026-09-17T17:39:33.272Z",
+			"caption": "测试照片",
+			"takenAt": "2026-09-16T16:00:00.000Z"
+		}
+	],
+	"albums": [
+		{
+			"id": "1789666810020-f4fe7bb39bf518",
+			"slug": "20260918测试相簿",
+			"title": "20260918测试相簿",
+			"description": "测试相簿的简介。",
+			"coverPhotoId": "1789666773272-90ef22a79688d8",
+			"createdAt": "2026-09-17T17:40:10.020Z",
+			"photoIds": [
+				"1789666773272-90ef22a79688d8",
+				"1789666773272-da46ff7f8fd2e",
+				"1789666773272-38854e1e9de0d8"
+			]
+		}
+	]
 }
