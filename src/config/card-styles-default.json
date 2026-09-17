@@ -57,6 +57,14 @@
 		"offsetY": null,
 		"enabled": true
 	},
+	"albumCard": {
+		"width": 200,
+		"height": 220,
+		"order": 7,
+		"offsetX": null,
+		"offsetY": null,
+		"enabled": true
+	},
 	"articleCard": {
 		"width": 266,
 		"height": 160,

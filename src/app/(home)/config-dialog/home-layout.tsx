@@ -13,6 +13,7 @@ const CARD_LABELS: Record<string, string> = {
 	musicCard: '音乐',
 	socialButtons: '联系',
 	shareCard: '分享',
+	albumCard: '相册',
 	articleCard: '文章',
 	writeButtons: '写作',
 	navCard: '导航',

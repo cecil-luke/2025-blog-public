@@ -55,6 +55,7 @@ skills-lock.json
 # AI Agent
 .agents
 .claude
+.cursor
 /AGENTS.md
 /CONTEXT.md
 /CLAUDE.md
@@ -65,3 +66,4 @@ skills-lock.json
 # scratch: 本地开发记录(不提交;已提交的历史记录不受影响)
 .scratch/string-wall/
 
+/2025-blog-public.code-workspace
