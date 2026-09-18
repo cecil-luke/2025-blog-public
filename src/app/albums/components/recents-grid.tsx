@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { cn } from '@/lib/utils'
 import type { AlbumPhoto } from '../types'
-import { groupByMonth, sortRecents } from '../library-utils'
+import { groupByDay, sortRecents } from '../library-utils'
 import { AlbumThumb } from './album-thumb-img'
 import { preloadOriginal } from './album-thumb'
 
@@ -86,12 +86,12 @@ export function RecentsGrid({
 		return <div className='text-secondary flex min-h-[40vh] items-center justify-center text-sm'>{emptyText}</div>
 	}
 
-	const groups = groupByMonth(sortRecents(photos).slice(0, visibleCount))
+	const groups = groupByDay(sortRecents(photos).slice(0, visibleCount))
 
 	return (
 		<div className='pb-24'>
 			{groups.map(group => (
-				<MonthGrid
+				<DayGrid
 					key={group.key}
 					label={group.label}
 					photos={group.photos}
@@ -111,7 +111,7 @@ export function RecentsGrid({
 	)
 }
 
-function MonthGrid({
+function DayGrid({
 	label,
 	photos,
 	isEditMode,
@@ -159,7 +159,7 @@ function MonthGrid({
 
 	return (
 		<section className='mb-6 overflow-visible'>
-			<h2 className='bg-bg/80 text-secondary sticky top-0 z-10 px-1 py-2 text-sm font-medium backdrop-blur-md'>{label}</h2>
+			<h2 className='text-secondary px-1 py-2 text-sm font-medium'>{label}</h2>
 			<div ref={gridRef} className='grid grid-cols-4 gap-1 overflow-visible py-2 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-8'>
 				{photos.map((photo, index) => (
 					<PhotoTile

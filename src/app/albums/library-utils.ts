@@ -12,20 +12,21 @@ export function sortRecents(photos: AlbumPhoto[]): AlbumPhoto[] {
 	})
 }
 
-export function monthLabel(iso: string): string {
+export function dayLabel(iso: string): string {
 	const date = new Date(iso)
 	if (Number.isNaN(date.getTime())) return '未知时间'
-	return `${date.getFullYear()}年${date.getMonth() + 1}月`
+	return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
 }
 
-export function groupByMonth(photos: AlbumPhoto[]): { key: string; label: string; photos: AlbumPhoto[] }[] {
+/** 按本地日期分组。传入顺序已是最新在前时，日期组也是新的在上。 */
+export function groupByDay(photos: AlbumPhoto[]): { key: string; label: string; photos: AlbumPhoto[] }[] {
 	const groups: { key: string; label: string; photos: AlbumPhoto[] }[] = []
 	for (const photo of sortRecents(photos)) {
 		const date = new Date(photoTime(photo))
-		const key = Number.isNaN(date.getTime()) ? 'unknown' : `${date.getFullYear()}-${date.getMonth()}`
+		const key = Number.isNaN(date.getTime()) ? 'unknown' : `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
 		const last = groups[groups.length - 1]
 		if (last?.key === key) last.photos.push(photo)
-		else groups.push({ key, label: monthLabel(photoTime(photo)), photos: [photo] })
+		else groups.push({ key, label: dayLabel(photoTime(photo)), photos: [photo] })
 	}
 	return groups
 }
