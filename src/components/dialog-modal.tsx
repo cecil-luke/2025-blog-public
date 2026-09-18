@@ -59,21 +59,20 @@ export function DialogModal({
 	return createPortal(
 		<AnimatePresence>
 			{open && (
-				<motion.div
-					initial={{ opacity: 0 }}
-					animate={{ opacity: 1 }}
-					exit={{ opacity: 0 }}
-					className={cn('bg-card fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-xl', overlayClassName)}
-					onClick={disableCloseOnOverlay ? undefined : onClose}>
+				<div className={cn('bg-card fixed inset-0 z-50', overlayClassName)} onClick={disableCloseOnOverlay ? undefined : onClose}>
+					{/* 模糊层与内容平级：祖先上的 transform / backdrop-filter 会让内部滑条拖不动 */}
 					<motion.div
-						initial={{ opacity: 0, scale: 0.8, y: 20 }}
-						animate={{ opacity: 1, scale: 1, y: 0 }}
-						exit={{ opacity: 0, scale: 0.8, y: 20 }}
-						className={cn('static', className)}
-						onClick={e => e.stopPropagation()}>
-						{children}
-					</motion.div>
-				</motion.div>
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						exit={{ opacity: 0 }}
+						className='pointer-events-none absolute inset-0 backdrop-blur-xl'
+					/>
+					<div className='pointer-events-none relative flex h-full w-full items-center justify-center p-4'>
+						<div className={cn('pointer-events-auto static', className)} onClick={e => e.stopPropagation()}>
+							{children}
+						</div>
+					</div>
+				</div>
 			)}
 		</AnimatePresence>,
 		document.body

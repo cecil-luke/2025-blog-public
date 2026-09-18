@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } fro
 import { motion } from 'motion/react'
 import { ANIMATION_DELAY, INIT_DELAY } from '@/consts'
 import { DialogModal } from '@/components/dialog-modal'
+import { fileToWebp } from '@/lib/file-utils'
 
 type ConvertedMeta = {
 	url: string
@@ -40,37 +41,6 @@ function formatBytes(bytes: number) {
 	if (bytes < 1024) return `${bytes.toFixed(0)} B`
 	if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
 	return `${(bytes / 1024 / 1024).toFixed(2)} MB`
-}
-
-async function fileToWebp(file: File, quality: number, maxWidth?: number) {
-	const bitmap = await createImageBitmap(file)
-	const canvas = document.createElement('canvas')
-
-	let width = bitmap.width
-	let height = bitmap.height
-
-	if (maxWidth && width > maxWidth) {
-		const ratio = maxWidth / width
-		width = maxWidth
-		height = Math.round(height * ratio)
-	}
-
-	canvas.width = width
-	canvas.height = height
-	const ctx = canvas.getContext('2d')
-	if (!ctx) throw new Error('无法初始化画布')
-	ctx.drawImage(bitmap, 0, 0, width, height)
-	const blob = await new Promise<Blob>((resolve, reject) => {
-		canvas.toBlob(
-			result => {
-				if (result) resolve(result)
-				else reject(new Error('无法生成 WEBP 文件'))
-			},
-			'image/webp',
-			quality
-		)
-	})
-	return blob
 }
 
 export default function Page() {

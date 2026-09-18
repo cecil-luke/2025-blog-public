@@ -21,12 +21,12 @@ export function fileToBase64NoPrefix(file: File): Promise<string> {
 	})
 }
 
-/** 把图片缩放到 maxWidth 宽(保持比例)并转成 webp File,供图床上传时自动生成缩略图用 */
-export async function makeThumbFile(file: File, maxWidth = 600, quality = 0.8): Promise<File> {
+/** 与 /image-toolbox 相同：转成 WEBP，可选限制最大宽度（保持比例） */
+export async function fileToWebp(file: File, quality: number, maxWidth?: number): Promise<Blob> {
 	const bitmap = await createImageBitmap(file)
 	let width = bitmap.width
 	let height = bitmap.height
-	if (width > maxWidth) {
+	if (maxWidth && width > maxWidth) {
 		const ratio = maxWidth / width
 		width = maxWidth
 		height = Math.round(height * ratio)
@@ -37,6 +37,7 @@ export async function makeThumbFile(file: File, maxWidth = 600, quality = 0.8): 
 	const ctx = canvas.getContext('2d')
 	if (!ctx) throw new Error('无法初始化画布')
 	ctx.drawImage(bitmap, 0, 0, width, height)
+	bitmap.close?.()
 	const blob = await new Promise<Blob>((resolve, reject) => {
 		canvas.toBlob(
 			result => {
@@ -47,6 +48,18 @@ export async function makeThumbFile(file: File, maxWidth = 600, quality = 0.8): 
 			quality
 		)
 	})
+	return blob
+}
+
+export async function makeWebpFile(file: File, quality: number, maxWidth?: number): Promise<File> {
+	const blob = await fileToWebp(file, quality, maxWidth)
+	const base = file.name.replace(/\.[^.]+$/, '') || 'photo'
+	return new File([blob], `${base}.webp`, { type: 'image/webp' })
+}
+
+/** 把图片缩放到 maxWidth 宽(保持比例)并转成 webp File,供图床/相册上传时自动生成缩略图用 */
+export async function makeThumbFile(file: File, maxWidth = 600, quality = 0.8): Promise<File> {
+	const blob = await fileToWebp(file, quality, maxWidth)
 	return new File([blob], 'thumb.webp', { type: 'image/webp' })
 }
 

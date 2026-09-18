@@ -36,6 +36,7 @@ export function AlbumsChrome({
 	const { siteContent } = useConfigStore()
 	const hideEditButton = siteContent.hideEditButton ?? false
 	const { isEditMode, setEditMode, library, imageItems, cancelEdits, markSaved } = useAlbumsStore()
+	const [saveProgress, setSaveProgress] = useState<{ message: string; current: number; total: number } | null>(null)
 
 	const handleChoosePrivateKey = async (file: File) => {
 		try {
@@ -50,10 +51,12 @@ export function AlbumsChrome({
 
 	const handleSave = async () => {
 		setIsSaving(true)
+		setSaveProgress({ message: '准备保存...', current: 0, total: 1 })
 		try {
 			await pushAlbums({
 				library,
-				imageItems
+				imageItems,
+				onProgress: progress => setSaveProgress({ message: progress.message, current: progress.current, total: progress.total })
 			})
 			markSaved()
 			toast.success('保存成功！')
@@ -62,6 +65,7 @@ export function AlbumsChrome({
 			toast.error(`保存失败: ${error?.message || '未知错误'}`)
 		} finally {
 			setIsSaving(false)
+			setSaveProgress(null)
 		}
 	}
 
@@ -126,6 +130,23 @@ export function AlbumsChrome({
 			</header>
 
 			{children}
+
+			{saveProgress && (
+				<div className='fixed inset-0 z-[80] flex items-center justify-center bg-black/35 backdrop-blur-sm'>
+					<div className='card w-80 space-y-3 p-5'>
+						<p className='text-sm font-medium'>{saveProgress.message}</p>
+						<div className='h-2 overflow-hidden rounded-full bg-black/10'>
+							<div
+								className='bg-brand h-full transition-all'
+								style={{ width: `${Math.round((saveProgress.current / Math.max(saveProgress.total, 1)) * 100)}%` }}
+							/>
+						</div>
+						<p className='text-secondary text-xs'>
+							{saveProgress.current} / {saveProgress.total}
+						</p>
+					</div>
+				</div>
+			)}
 
 			<motion.div initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} className='fixed top-4 right-6 z-30 flex gap-3 max-sm:hidden'>
 				{isEditMode ? (

@@ -9,33 +9,54 @@ import { toast } from 'sonner'
 import type { AlbumLibrary } from '../types'
 import { cloneLibrary } from '../library-utils'
 
+export type PushAlbumsProgress = {
+	phase: 'prepare' | 'upload' | 'commit'
+	current: number
+	total: number
+	message: string
+}
+
 export type PushAlbumsParams = {
 	library: AlbumLibrary
 	imageItems?: Map<string, ImageItem>
+	onProgress?: (progress: PushAlbumsProgress) => void
 }
 
 export async function pushAlbums(params: PushAlbumsParams): Promise<AlbumLibrary> {
-	const { imageItems } = params
+	const { imageItems, onProgress } = params
 	const library = cloneLibrary(params.library)
+
+	const report = (progress: PushAlbumsProgress) => {
+		onProgress?.(progress)
+	}
 
 	const token = await getAuthToken()
 
+	report({ phase: 'prepare', current: 0, total: 1, message: '正在获取分支信息...' })
 	toast.info('正在获取分支信息...')
 	const refData = await getRef(token, GITHUB_CONFIG.OWNER, GITHUB_CONFIG.REPO, `heads/${GITHUB_CONFIG.BRANCH}`)
 	const latestCommitSha = refData.sha
 
 	const commitMessage = `更新相册`
 
-	toast.info('正在准备文件...')
-
 	const treeItems: TreeItem[] = []
 	const uploadedHashes = new Set<string>()
 
-	if (imageItems && imageItems.size > 0) {
-		toast.info('正在上传图片...')
-		for (const [photoId, imageItem] of imageItems.entries()) {
+	const fileEntries = [...(imageItems?.entries() ?? [])].filter(
+		([photoId, imageItem]) => imageItem.type === 'file' && library.photos.some(photo => photo.id === photoId)
+	)
+
+	if (fileEntries.length > 0) {
+		let uploaded = 0
+		for (const [photoId, imageItem] of fileEntries) {
 			if (imageItem.type !== 'file') continue
-			if (!library.photos.some(photo => photo.id === photoId)) continue
+			uploaded += 1
+			report({
+				phase: 'upload',
+				current: uploaded,
+				total: fileEntries.length,
+				message: `正在上传图片 ${uploaded} / ${fileEntries.length}`
+			})
 
 			const hash = imageItem.hash || (await hashFileSHA256(imageItem.file))
 			const ext = getFileExt(imageItem.file.name)
@@ -69,9 +90,8 @@ export async function pushAlbums(params: PushAlbumsParams): Promise<AlbumLibrary
 		}
 	}
 
+	report({ phase: 'commit', current: 0, total: 3, message: '正在检查需要删除的文件...' })
 	const currentImageUrls = new Set(library.photos.map(photo => photo.url).filter(url => url.startsWith('/images/albums/')))
-
-	toast.info('正在检查需要删除的文件...')
 	const previousLibraryJson = await readTextFileFromRepo(token, GITHUB_CONFIG.OWNER, GITHUB_CONFIG.REPO, 'src/app/albums/library.json', GITHUB_CONFIG.BRANCH)
 
 	if (previousLibraryJson) {
@@ -112,13 +132,13 @@ export async function pushAlbums(params: PushAlbumsParams): Promise<AlbumLibrary
 		sha: libraryBlob.sha
 	})
 
-	toast.info('正在创建文件树...')
+	report({ phase: 'commit', current: 1, total: 3, message: '正在创建文件树...' })
 	const treeData = await createTree(token, GITHUB_CONFIG.OWNER, GITHUB_CONFIG.REPO, treeItems, latestCommitSha)
 
-	toast.info('正在创建提交...')
+	report({ phase: 'commit', current: 2, total: 3, message: '正在创建提交...' })
 	const commitData = await createCommit(token, GITHUB_CONFIG.OWNER, GITHUB_CONFIG.REPO, commitMessage, treeData.sha, [latestCommitSha])
 
-	toast.info('正在更新分支...')
+	report({ phase: 'commit', current: 3, total: 3, message: '正在更新分支...' })
 	await updateRef(token, GITHUB_CONFIG.OWNER, GITHUB_CONFIG.REPO, `heads/${GITHUB_CONFIG.BRANCH}`, commitData.sha)
 
 	toast.success('发布成功！')

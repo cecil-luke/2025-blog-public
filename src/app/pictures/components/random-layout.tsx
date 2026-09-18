@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { useCenterInit, useCenterStore } from '@/hooks/use-center'
 import { Picture } from '../page'
-import siteContent from '@/config/site-content.json'
 import { cn } from '@/lib/utils'
 import { useSize } from '@/hooks/use-size'
 import { thumbUrl } from './picture-thumb'
@@ -90,14 +89,7 @@ const formatUploadedAt = (uploadedAt?: string) => {
 	if (!uploadedAt) return ''
 	const date = new Date(uploadedAt)
 	if (Number.isNaN(date.getTime())) return uploadedAt
-
-	const year = date.getFullYear()
-	const month = String(date.getMonth() + 1).padStart(2, '0')
-	const day = String(date.getDate()).padStart(2, '0')
-	const hours = String(date.getHours()).padStart(2, '0')
-	const minutes = String(date.getMinutes()).padStart(2, '0')
-
-	return `${year}-${month}-${day} ${hours}:${minutes}`
+	return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
 }
 
 const loadSavedOffset = (url: string): { x: number; y: number } => {
@@ -469,17 +461,17 @@ const FloatingImage = ({
 					drag
 					dragConstraints={maxSM ? undefined : bodyRef}
 					dragMomentum={false}
-					className='fixed min-h-[150px] w-[200px] cursor-pointer p-6 shadow'
+					className='fixed min-h-[150px] w-[200px] cursor-pointer rounded-md p-6'
 					style={{
-						backgroundColor: siteContent.backgroundColors[groupIndex % siteContent.backgroundColors.length],
+						backgroundColor: 'rgb(255 255 255 / 40%)',
 						zIndex: TOP_Z_INDEX + 1,
 						right: maxSM ? 12 : centerX / 3,
 						top: maxSM ? 12 : centerY
 					}}
 					initial={{ opacity: 0, scale: 0.4 }}
 					animate={{ opacity: 1, scale: 1 }}>
-					<div className='text-secondary mb-2 text-xs'>{formatUploadedAt(uploadedAt)}</div>
-					<div className='text-sm'>{description}</div>
+					<div className='mb-2 text-[15px] font-bold text-black'>{formatUploadedAt(uploadedAt)}</div>
+					<div className='text-sm text-black'>{description}</div>
 				</motion.div>
 			)}
 		</>

@@ -11,7 +11,6 @@ import { pushPictures } from './services/push-pictures'
 import { useAuthStore } from '@/hooks/use-auth'
 import { useConfigStore } from '@/app/(home)/stores/config-store'
 import type { ImageItem } from '../projects/components/image-upload-dialog'
-import { useRouter } from 'next/navigation'
 
 export interface Picture {
 	id: string
@@ -29,7 +28,6 @@ export default function Page() {
 	const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
 	const [imageItems, setImageItems] = useState<Map<string, ImageItem>>(new Map())
 	const keyInputRef = useRef<HTMLInputElement>(null)
-	const router = useRouter()
 	// 桌面端用串线墙、移动端沿用散落墙(与编辑按钮的 max-sm 断点一致)
 	const [isDesktop, setIsDesktop] = useState<boolean | null>(null)
 
@@ -45,8 +43,8 @@ export default function Page() {
 	const { siteContent } = useConfigStore()
 	const hideEditButton = siteContent.hideEditButton ?? false
 
-	const handleUploadSubmit = ({ images, description }: { images: ImageItem[]; description: string }) => {
-		const now = new Date().toISOString()
+	const handleUploadSubmit = ({ images, description, uploadedAt }: { images: ImageItem[]; description: string; uploadedAt?: string }) => {
+		const now = uploadedAt || new Date().toISOString()
 
 		if (images.length === 0) {
 			toast.error('请至少选择一张图片')
@@ -257,13 +255,6 @@ export default function Page() {
 			<motion.div initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }} className='absolute top-4 right-6 flex gap-3 max-sm:hidden'>
 				{isEditMode ? (
 					<>
-						<motion.button
-							whileHover={{ scale: 1.05 }}
-							whileTap={{ scale: 0.95 }}
-							onClick={() => router.push('/image-toolbox')}
-							className='rounded-xl border bg-blue-50 px-4 py-2 text-sm text-blue-700'>
-							压缩工具
-						</motion.button>
 						<motion.button
 							whileHover={{ scale: 1.05 }}
 							whileTap={{ scale: 0.95 }}

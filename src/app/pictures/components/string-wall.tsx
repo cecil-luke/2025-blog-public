@@ -215,8 +215,7 @@ const formatUploadedAt = (uploadedAt?: string) => {
 	if (!uploadedAt) return ''
 	const date = new Date(uploadedAt)
 	if (Number.isNaN(date.getTime())) return uploadedAt
-	const pad = (n: number) => String(n).padStart(2, '0')
-	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+	return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`
 }
 
 // 原图预加载:与墙上缩略图队列分开,避免开场动画被原图抢走带宽。
@@ -245,8 +244,9 @@ const ZOOM_SIZE_CAP = 1200
 const ZOOM_BORDER = 8
 
 function fitZoomBox(ratio: number) {
-	const maxW = window.innerWidth - ZOOM_VIEW_PAD
-	const maxH = window.innerHeight - ZOOM_VIEW_PAD
+	// 宽高是图片内容区；border-8 在 content-box 外圈，先把边框从视口里扣掉
+	const maxW = Math.max(1, window.innerWidth - ZOOM_VIEW_PAD - ZOOM_BORDER * 2)
+	const maxH = Math.max(1, window.innerHeight - ZOOM_VIEW_PAD - ZOOM_BORDER * 2)
 	let w: number
 	let h: number
 	if (ratio >= 1) {
@@ -264,7 +264,7 @@ function fitZoomBox(ratio: number) {
 			h = w / ratio
 		}
 	}
-	return { w, h }
+	return { w: Math.max(1, Math.round(w)), h: Math.max(1, Math.round(h)) }
 }
 
 function readCellAspect(index: number): number | null {
@@ -486,9 +486,12 @@ function PhotoZoom({
 		})
 	}, [box, closing])
 
-	const applyRatio = (naturalW: number, naturalH: number) => {
+	const applyRatio = (naturalW: number, naturalH: number, overwrite = false) => {
 		if (!naturalW || !naturalH) return
-		setBox(prev => prev ?? fitZoomBox(naturalW / naturalH))
+		setBox(prev => {
+			if (prev && !overwrite) return prev
+			return fitZoomBox(naturalW / naturalH)
+		})
 	}
 
 	useLayoutEffect(() => {
@@ -522,6 +525,7 @@ function PhotoZoom({
 					zIndex: 80,
 					width: box?.w,
 					height: box?.h,
+					boxSizing: 'content-box',
 					visibility: box ? 'visible' : 'hidden'
 				}}
 				className='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-lg border-8 border-white shadow-2xl'>
@@ -539,7 +543,7 @@ function PhotoZoom({
 					onError={() => {
 						if (thumbSrc !== item.url) setThumbSrc(item.url)
 					}}
-					className='absolute inset-0 h-full w-full object-contain select-none'
+					className='absolute inset-0 h-full w-full object-cover select-none'
 				/>
 				<img
 					ref={fullImgRef}
@@ -549,9 +553,13 @@ function PhotoZoom({
 					draggable={false}
 					decoding='async'
 					fetchPriority='high'
-					onLoad={() => setFullReady(true)}
+					onLoad={event => {
+						const img = event.currentTarget
+						applyRatio(img.naturalWidth, img.naturalHeight, true)
+						setFullReady(true)
+					}}
 					onError={() => setFullFailed(true)}
-					className={`absolute inset-0 h-full w-full object-contain select-none transition-opacity duration-300 ${fullReady ? 'opacity-100' : 'opacity-0'}`}
+					className={`absolute inset-0 h-full w-full object-cover select-none transition-opacity duration-300 ${fullReady ? 'opacity-100' : 'opacity-0'}`}
 				/>
 				{showLoading && !fullReady && !fullFailed && (
 					<div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
@@ -570,12 +578,11 @@ function PhotoZoom({
 						zIndex: 81,
 						right: labelPos.right,
 						top: labelPos.top,
-						backgroundColor: '#f6e8c1',
-						borderColor: '#d9c48f'
+						backgroundColor: 'rgb(255 255 255 / 40%)'
 					}}
-					className='fixed min-h-[150px] w-[200px] cursor-pointer rounded-md border p-6 shadow-lg'>
-					<div className='mb-2 text-xs text-[#8a6d3f]'>{formatUploadedAt(item.uploadedAt)}</div>
-					<div className='text-sm text-[#5f4a28]'>{item.description}</div>
+					className='fixed min-h-[150px] w-[200px] cursor-pointer rounded-md p-6'>
+					<div className='mb-2 text-[15px] font-bold text-black'>{formatUploadedAt(item.uploadedAt)}</div>
+					<div className='text-sm text-black'>{item.description}</div>
 				</motion.div>
 			)}
 			{!closing && (

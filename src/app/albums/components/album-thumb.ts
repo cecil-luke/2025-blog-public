@@ -32,3 +32,23 @@ export function originalRepoPath(url: string): string | null {
 	if (!name || name.startsWith('sm/')) return null
 	return `public/images/albums/${name}`
 }
+
+const originalPreloads = new Map<string, Promise<void>>()
+
+/** 原图预加载：同一 URL 只打一次，命中后查看器 <img> 走缓存。 */
+export function preloadOriginal(url: string, priority: 'high' | 'low' = 'low'): Promise<void> {
+	const existing = originalPreloads.get(url)
+	if (existing) return existing
+	const task = new Promise<void>(resolve => {
+		const img = new Image()
+		img.fetchPriority = priority
+		img.onload = () => resolve()
+		img.onerror = () => {
+			originalPreloads.delete(url)
+			resolve()
+		}
+		img.src = url
+	})
+	originalPreloads.set(url, task)
+	return task
+}

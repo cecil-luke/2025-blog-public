@@ -22,7 +22,7 @@ const DEFAULT_MODELS: Live2DModelConfig[] = [
 ]
 
 // 展示看板娘的路由：首页 + 下列路由前缀
-const TARGET_ROUTE_PREFIXES = ['/blog', '/projects', '/about', '/share', '/bloggers']
+const TARGET_ROUTE_PREFIXES = ['/blog', '/projects', '/about', '/share', '/bloggers', '/albums']
 
 // 自动切换间隔（毫秒）—— 每五分钟
 const AUTO_SWITCH_INTERVAL = 5 * 60 * 1000
