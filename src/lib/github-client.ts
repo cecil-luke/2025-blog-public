@@ -126,13 +126,13 @@ export async function withGitFastForwardRetry<T>(run: () => Promise<T>, options?
 }
 
 export async function getRef(token: string, owner: string, repo: string, ref: string): Promise<{ sha: string }> {
-	const res = await fetch(`${GH_API}/repos/${owner}/${repo}/git/ref/${encodeURIComponent(ref)}`, {
+	// GitHub CORS 不允许 Cache-Control；用 query 绕过中间代理/CDN 对 GET ref 的短缓存。
+	const res = await fetch(`${GH_API}/repos/${owner}/${repo}/git/ref/${encodeURIComponent(ref)}?ts=${Date.now()}`, {
 		cache: 'no-store',
 		headers: {
 			Authorization: `Bearer ${token}`,
 			Accept: 'application/vnd.github+json',
-			'X-GitHub-Api-Version': '2022-11-28',
-			'Cache-Control': 'no-cache'
+			'X-GitHub-Api-Version': '2022-11-28'
 		}
 	})
 	if (res.status === 401) handle401Error()
@@ -211,13 +211,12 @@ export async function updateRef(token: string, owner: string, repo: string, ref:
 }
 
 export async function readTextFileFromRepo(token: string, owner: string, repo: string, path: string, ref: string): Promise<string | null> {
-	const res = await fetch(`${GH_API}/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}`, {
+	const res = await fetch(`${GH_API}/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}&ts=${Date.now()}`, {
 		cache: 'no-store',
 		headers: {
 			Authorization: `Bearer ${token}`,
 			Accept: 'application/vnd.github+json',
-			'X-GitHub-Api-Version': '2022-11-28',
-			'Cache-Control': 'no-cache'
+			'X-GitHub-Api-Version': '2022-11-28'
 		}
 	})
 	if (res.status === 401) handle401Error()
