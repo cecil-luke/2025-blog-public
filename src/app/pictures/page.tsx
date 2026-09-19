@@ -118,7 +118,7 @@ export default function Page() {
 			} else {
 				// 删除特定索引的文件项
 				next.delete(`${pictureId}::${imageIndex}`)
-				
+
 				// 重新索引：删除索引 imageIndex 后，后面的索引需要前移
 				// 例如：删除索引 1，原来的索引 2 变成 1，索引 3 变成 2
 				const keysToUpdate: Array<{ oldKey: string; newKey: string }> = []
@@ -135,7 +135,7 @@ export default function Page() {
 						}
 					}
 				}
-				
+
 				// 执行重新索引
 				for (const { oldKey, newKey } of keysToUpdate) {
 					const value = next.get(oldKey)
@@ -187,12 +187,16 @@ export default function Page() {
 		setIsSaving(true)
 
 		try {
-			await pushPictures({
+			const updatedPictures = await pushPictures({
 				pictures,
 				imageItems
 			})
 
-			setOriginalPictures(pictures)
+			setPictures(updatedPictures)
+			setOriginalPictures(updatedPictures)
+			for (const item of imageItems.values()) {
+				if (item.type === 'file') URL.revokeObjectURL(item.previewUrl)
+			}
 			setImageItems(new Map())
 			setIsEditMode(false)
 			toast.success('保存成功！')

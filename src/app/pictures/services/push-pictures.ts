@@ -6,14 +6,31 @@ import type { ImageItem } from '../../projects/components/image-upload-dialog'
 import { getFileExt } from '@/lib/utils'
 import { thumbRepoPath } from '../components/picture-thumb'
 import { toast } from 'sonner'
-import { Picture } from '../page'
+import type { Picture } from '../page'
 
 export type PushPicturesParams = {
 	pictures: Picture[]
 	imageItems?: Map<string, ImageItem>
 }
 
-export async function pushPictures(params: PushPicturesParams): Promise<void> {
+function collectPictureUrls(pictures: Picture[]): string[] {
+	const urls: string[] = []
+	for (const picture of pictures) {
+		if (picture.image) urls.push(picture.image)
+		if (picture.images && picture.images.length > 0) {
+			urls.push(...picture.images)
+		}
+	}
+	return urls
+}
+
+function assertNoBlobMediaUrls(urls: string[]): void {
+	if (urls.some(url => url.startsWith('blob:'))) {
+		throw new Error('保存中止：仍有未上传的本地预览地址（blob:）')
+	}
+}
+
+export async function pushPictures(params: PushPicturesParams): Promise<Picture[]> {
 	const { pictures, imageItems } = params
 
 	const token = await getAuthToken()
@@ -85,14 +102,13 @@ export async function pushPictures(params: PushPicturesParams): Promise<void> {
 		}
 	}
 
-	// 收集当前所有使用的图片 URL
+	assertNoBlobMediaUrls(collectPictureUrls(updatedPictures))
+
+	// 收集当前所有使用的本地图片 URL（忽略 blob: 与外链）
 	const currentImageUrls = new Set<string>()
-	for (const picture of updatedPictures) {
-		if (picture.image) {
-			currentImageUrls.add(picture.image)
-		}
-		if (picture.images && picture.images.length > 0) {
-			picture.images.forEach(url => currentImageUrls.add(url))
+	for (const url of collectPictureUrls(updatedPictures)) {
+		if (url.startsWith('/images/pictures/')) {
+			currentImageUrls.add(url)
 		}
 	}
 
@@ -161,4 +177,6 @@ export async function pushPictures(params: PushPicturesParams): Promise<void> {
 	await updateRef(token, GITHUB_CONFIG.OWNER, GITHUB_CONFIG.REPO, `heads/${GITHUB_CONFIG.BRANCH}`, commitData.sha)
 
 	toast.success('发布成功！')
+
+	return updatedPictures
 }

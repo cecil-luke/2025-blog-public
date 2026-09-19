@@ -22,6 +22,12 @@ export type PushAlbumsParams = {
 	onProgress?: (progress: PushAlbumsProgress) => void
 }
 
+function assertNoBlobMediaUrls(urls: string[]): void {
+	if (urls.some(url => url.startsWith('blob:'))) {
+		throw new Error('保存中止：仍有未上传的本地预览地址（blob:）')
+	}
+}
+
 export async function pushAlbums(params: PushAlbumsParams): Promise<AlbumLibrary> {
 	const { imageItems, onProgress } = params
 	const library = cloneLibrary(params.library)
@@ -89,6 +95,8 @@ export async function pushAlbums(params: PushAlbumsParams): Promise<AlbumLibrary
 			library.photos = library.photos.map(photo => (photo.id === photoId ? { ...photo, url: publicPath } : photo))
 		}
 	}
+
+	assertNoBlobMediaUrls(library.photos.map(photo => photo.url))
 
 	report({ phase: 'commit', current: 0, total: 3, message: '正在检查需要删除的文件...' })
 	const currentImageUrls = new Set(library.photos.map(photo => photo.url).filter(url => url.startsWith('/images/albums/')))

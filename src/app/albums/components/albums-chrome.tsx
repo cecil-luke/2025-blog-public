@@ -53,12 +53,12 @@ export function AlbumsChrome({
 		setIsSaving(true)
 		setSaveProgress({ message: '准备保存...', current: 0, total: 1 })
 		try {
-			await pushAlbums({
+			const saved = await pushAlbums({
 				library,
 				imageItems,
 				onProgress: progress => setSaveProgress({ message: progress.message, current: progress.current, total: progress.total })
 			})
-			markSaved()
+			markSaved(saved)
 			toast.success('保存成功！')
 		} catch (error: any) {
 			console.error('Failed to save:', error)

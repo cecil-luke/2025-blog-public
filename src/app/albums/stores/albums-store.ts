@@ -21,7 +21,7 @@ type AlbumsState = {
 	removeFromAlbum: (albumId: string, photoId: string) => void
 	setCover: (albumId: string, photoId?: string) => void
 	cancelEdits: () => void
-	markSaved: () => void
+	markSaved: (saved: AlbumLibrary) => void
 }
 
 const emptyLibrary = cloneLibrary(initialLibrary as AlbumLibrary)
@@ -178,12 +178,15 @@ export const useAlbumsStore = create<AlbumsState>((set, get) => ({
 			isEditMode: false
 		})
 	},
-	markSaved: () => {
-		const { library } = get()
+	markSaved: saved => {
+		const { imageItems } = get()
+		const next = cloneLibrary(saved)
 		set({
-			originalLibrary: cloneLibrary(library),
+			library: next,
+			originalLibrary: cloneLibrary(next),
 			imageItems: new Map(),
 			isEditMode: false
 		})
+		revokeItems(imageItems)
 	}
 }))
