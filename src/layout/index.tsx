@@ -1,5 +1,6 @@
 'use client'
 import { PropsWithChildren } from 'react'
+import { usePathname } from 'next/navigation'
 import { useCenterInit } from '@/hooks/use-center'
 import BlurredBubblesBackground from './backgrounds/blurred-bubbles'
 import NavCard from '@/components/nav-card'
@@ -20,6 +21,8 @@ export default function Layout({ children }: PropsWithChildren) {
 	useSizeInit()
 	const { cardStyles, siteContent, regenerateKey } = useConfigStore()
 	const { maxSM, init } = useSize()
+	const pathname = usePathname()
+	const hideMobileTools = maxSM && pathname.startsWith('/pictures')
 
 	const backgroundImages = (siteContent.backgroundImages ?? []) as Array<{ id: string; url: string }>
 	const currentBackgroundImageId = siteContent.currentBackgroundImageId
@@ -69,9 +72,9 @@ export default function Layout({ children }: PropsWithChildren) {
 			<ThemeToggle variant='desktop' />
 
 			{/* 移动端浮动按钮：从上到下依次为主题切换、搜索、目录、返回顶部 */}
-			{maxSM && init && <ThemeToggle variant='mobile' />}
+			{maxSM && init && !hideMobileTools && <ThemeToggle variant='mobile' />}
 
-			{maxSM && init && (
+			{maxSM && init && !hideMobileTools && (
 				<button
 					type='button'
 					aria-label='搜索文章'

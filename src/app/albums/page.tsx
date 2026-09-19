@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'motion/react'
 import { useAlbumsStore } from './stores/albums-store'
@@ -35,6 +35,22 @@ function AlbumsHome() {
 	const [albumDialog, setAlbumDialog] = useState<'create' | string | null>(null)
 	const [membershipAlbumId, setMembershipAlbumId] = useState<string | null>(null)
 	const [pickingAlbum, setPickingAlbum] = useState(false)
+
+	useLayoutEffect(() => {
+		// html 设了 scroll-behavior: smooth。从首页滚下来再点进相册时,
+		// 路由会把旧的滚动位置平滑滑回顶部,看起来像从最近照片底部往上滑。
+		const root = document.documentElement
+		const previous = root.style.scrollBehavior
+		root.style.scrollBehavior = 'auto'
+		window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+		const frame = requestAnimationFrame(() => {
+			root.style.scrollBehavior = previous
+		})
+		return () => {
+			cancelAnimationFrame(frame)
+			root.style.scrollBehavior = previous
+		}
+	}, [])
 
 	useEffect(() => {
 		if (!isEditMode) setSelectedIds(new Set())

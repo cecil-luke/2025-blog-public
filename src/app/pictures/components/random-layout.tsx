@@ -440,6 +440,10 @@ const FloatingImage = ({
 					<motion.button
 						initial={{ opacity: 0, scale: 0.8 }}
 						animate={{ opacity: 1, scale: 1 }}
+						onMouseDown={e => {
+							e.preventDefault()
+							e.stopPropagation()
+						}}
 						onClick={e => {
 							e.stopPropagation()
 							onDeleteSingle?.(pictureId, imageIndex)
@@ -456,12 +460,12 @@ const FloatingImage = ({
 				)}
 			</motion.div>
 
-			{isZoomed && description && (
+			{isZoomed && (description || formatUploadedAt(uploadedAt)) && (
 				<motion.div
 					drag
 					dragConstraints={maxSM ? undefined : bodyRef}
 					dragMomentum={false}
-					className='fixed min-h-[150px] w-[200px] cursor-pointer rounded-md p-6'
+					className={cn('fixed cursor-pointer rounded-md p-6', description ? 'min-h-[150px] w-[200px]' : 'w-max max-w-[200px]')}
 					style={{
 						backgroundColor: 'rgb(255 255 255 / 40%)',
 						zIndex: TOP_Z_INDEX + 1,
@@ -470,8 +474,10 @@ const FloatingImage = ({
 					}}
 					initial={{ opacity: 0, scale: 0.4 }}
 					animate={{ opacity: 1, scale: 1 }}>
-					<div className='mb-2 text-[15px] font-bold text-black'>{formatUploadedAt(uploadedAt)}</div>
-					<div className='text-sm text-black'>{description}</div>
+					{formatUploadedAt(uploadedAt) && (
+						<div className={cn('text-[15px] font-bold text-black', description && 'mb-2')}>{formatUploadedAt(uploadedAt)}</div>
+					)}
+					{description && <div className='text-sm text-black'>{description}</div>}
 				</motion.div>
 			)}
 		</>

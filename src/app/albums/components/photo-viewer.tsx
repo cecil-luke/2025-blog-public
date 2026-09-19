@@ -10,14 +10,22 @@ import { photoTime } from '../library-utils'
 
 const VIEW_PAD_X = 120
 const VIEW_PAD_Y = 96
+const MOBILE_PAD = 16
 const CAPTION_W = 200
 const CAPTION_H = 150
 const REST_POSE = { opacity: 1, x: 0, y: 0, scale: 1 }
 const SWITCH_INITIAL = { opacity: 0, x: 0, y: 0, scale: 0.7 }
 
+function isMobileView() {
+	return window.innerWidth < 640
+}
+
 function fitZoomBox(ratio: number) {
-	const maxW = Math.max(160, window.innerWidth - VIEW_PAD_X * 2)
-	const maxH = Math.max(160, window.innerHeight - VIEW_PAD_Y * 2)
+	const mobile = isMobileView()
+	const padX = mobile ? MOBILE_PAD : VIEW_PAD_X
+	const padY = mobile ? MOBILE_PAD : VIEW_PAD_Y
+	const maxW = Math.max(1, window.innerWidth - padX * 2)
+	const maxH = Math.max(1, window.innerHeight - padY * 2)
 	let w: number
 	let h: number
 	if (ratio >= 1) {
@@ -39,6 +47,9 @@ function fitZoomBox(ratio: number) {
 }
 
 function captionPos(box: { w: number; h: number }) {
+	if (isMobileView()) {
+		return { left: 12, top: 56 }
+	}
 	const imageRight = (window.innerWidth + box.w) / 2
 	const left = Math.min(Math.max(16, imageRight - CAPTION_W / 2), window.innerWidth - CAPTION_W - 16)
 	const top = Math.min(Math.max(16, window.innerHeight / 2 - CAPTION_H / 2), window.innerHeight - CAPTION_H - 16)
@@ -332,7 +343,11 @@ export function PhotoViewer({
 					}}
 					data-album-caption
 					role='note'
-					className='fixed min-h-[150px] w-[200px] cursor-grab rounded-md p-6 active:cursor-grabbing'>
+					className={`fixed cursor-grab rounded-md active:cursor-grabbing ${
+						isMobileView()
+							? 'w-max max-w-[min(220px,calc(100vw-24px))] p-3'
+							: `w-[200px] p-6 ${photo.caption ? 'min-h-[150px]' : ''}`
+					}`}>
 					{captionDate && <div className='mb-2 text-[15px] font-bold text-black'>{captionDate}</div>}
 					{photo.caption && <div className='max-h-64 overflow-y-auto text-sm text-black'>{photo.caption}</div>}
 				</motion.div>
@@ -352,14 +367,14 @@ export function PhotoViewer({
 								type='button'
 								onClick={goPrev}
 								aria-label='上一张'
-								className='border-border fixed top-1/2 left-4 z-[93] flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border bg-white/70 text-2xl shadow-md backdrop-blur-md transition-colors hover:bg-white/95 max-sm:left-2'>
+								className='border-border fixed top-1/2 left-4 z-[93] flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border bg-white/70 text-2xl shadow-md backdrop-blur-md transition-colors hover:bg-white/95 max-sm:left-2 max-sm:border-white/40 max-sm:bg-transparent max-sm:shadow-none max-sm:backdrop-blur-none max-sm:hover:bg-transparent'>
 								‹
 							</button>
 							<button
 								type='button'
 								onClick={goNext}
 								aria-label='下一张'
-								className='border-border fixed top-1/2 right-4 z-[93] flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border bg-white/70 text-2xl shadow-md backdrop-blur-md transition-colors hover:bg-white/95 max-sm:right-2'>
+								className='border-border fixed top-1/2 right-4 z-[93] flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border bg-white/70 text-2xl shadow-md backdrop-blur-md transition-colors hover:bg-white/95 max-sm:right-2 max-sm:border-white/40 max-sm:bg-transparent max-sm:shadow-none max-sm:backdrop-blur-none max-sm:hover:bg-transparent'>
 								›
 							</button>
 						</>

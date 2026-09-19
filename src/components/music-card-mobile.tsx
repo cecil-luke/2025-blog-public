@@ -105,9 +105,9 @@ export default function MusicCardMobile() {
 
 	// FAB 显示条件：抽屉未打开 且 (非 peek 模式 或 peek 模式但迷你条不显示——即暂停后)
 	// 简化：抽屉未打开时永远显示 FAB（peek 迷你条与 FAB 互斥，由下面条件控制）
-	const showFab = !drawerOpen
-	// 迷你条显示条件：抽屉未打开 且 peek 且 正在播放
-	const showPeek = !drawerOpen && peek && isPlaying
+	const showFab = !drawerOpen && !pathname.startsWith('/pictures')
+	// 迷你条显示条件：抽屉未打开 且 peek 且 正在播放。图床页不留入口，避免挡住照片。
+	const showPeek = !drawerOpen && peek && isPlaying && !pathname.startsWith('/pictures')
 
 	return (
 		<>

@@ -376,6 +376,10 @@ function PhotoCell({
 				<motion.button
 					initial={{ opacity: 0, scale: 0.8 }}
 					animate={{ opacity: 1, scale: 1 }}
+					onMouseDown={event => {
+						event.preventDefault()
+						event.stopPropagation()
+					}}
 					onClick={event => {
 						event.stopPropagation()
 						onDeleteSingle?.(item.pictureId, item.imageIndex)
@@ -412,6 +416,7 @@ function PhotoZoom({
 	onNext: () => void
 }) {
 	const total = items.length
+	const dateLabel = formatUploadedAt(item.uploadedAt)
 	const [labelPos, setLabelPos] = useState<{ right: number; top: number } | null>(null)
 	const [closing, setClosing] = useState(false)
 	const [exit, setExit] = useState<{ x: number; y: number; scale: number } | null>(null)
@@ -567,7 +572,7 @@ function PhotoZoom({
 					</div>
 				)}
 			</motion.div>
-			{!closing && item.description && labelPos && (
+			{!closing && (dateLabel || item.description) && labelPos && (
 				<motion.div
 					drag
 					dragConstraints={backdropRef}
@@ -580,9 +585,9 @@ function PhotoZoom({
 						top: labelPos.top,
 						backgroundColor: 'rgb(255 255 255 / 40%)'
 					}}
-					className='fixed min-h-[150px] w-[200px] cursor-pointer rounded-md p-6'>
-					<div className='mb-2 text-[15px] font-bold text-black'>{formatUploadedAt(item.uploadedAt)}</div>
-					<div className='text-sm text-black'>{item.description}</div>
+					className={`fixed cursor-pointer rounded-md p-6 ${item.description ? 'min-h-[150px] w-[200px]' : 'w-max max-w-[200px]'}`}>
+					{dateLabel && <div className={`text-[15px] font-bold text-black ${item.description ? 'mb-2' : ''}`}>{dateLabel}</div>}
+					{item.description && <div className='text-sm text-black'>{item.description}</div>}
 				</motion.div>
 			)}
 			{!closing && (
@@ -683,6 +688,19 @@ function Wall({ items, speed, gap, cell, isEditMode = false, onDeleteSingle, onR
 			return
 		}
 
+		// 播完之后删图会改变 items.length,本 effect 会重跑。此时 revealed 已经走完,
+		// 若仍跟着滚,goal 会变成 maxScroll(),视口被拽回最底部。
+		if (revealedRef.current >= N) {
+			revealedRef.current = N
+			pRef.current = 1
+			interruptedRef.current = true
+			decoRef.current = pathInfo.decorations.length
+			setRevealedCount(N)
+			setDecoCount(pathInfo.decorations.length)
+			if (lineRef.current) lineRef.current.style.strokeDashoffset = '0'
+			return
+		}
+
 		const tick = (now: number) => {
 			const dt = now - lastNow
 			lastNow = now
@@ -740,7 +758,10 @@ function Wall({ items, speed, gap, cell, isEditMode = false, onDeleteSingle, onR
 				// 注意:全局 html 有 scroll-behavior: smooth,逐帧 scrollTo 会被浏览器自身的平滑动画拖慢,
 				// 必须显式 instant,让 rAF 缓动全权接管
 				window.scrollTo({ top: cur + (goal - cur) * 0.12, behavior: 'instant' as ScrollBehavior })
-				if (done && Math.abs(goal - cur) < 2) shouldStop = true
+				if (done && Math.abs(goal - cur) < 2) {
+					shouldStop = true
+					interruptedRef.current = true
+				}
 			} else if (done) {
 				shouldStop = true
 			}
