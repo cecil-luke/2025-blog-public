@@ -1,6 +1,7 @@
 'use client'
 
 import { useAuthStore } from '@/hooks/use-auth'
+import { markPendingRedeploy } from '@/lib/stale-client'
 import { KJUR, KEYUTIL } from 'jsrsasign'
 import { toast } from 'sonner'
 
@@ -93,6 +94,7 @@ export async function putFile(token: string, owner: string, repo: string, path: 
 	if (res.status === 401) handle401Error()
 	if (res.status === 422) handle422Error()
 	if (!res.ok) throw new Error(`put file failed: ${res.status}`)
+	markPendingRedeploy()
 	return res.json()
 }
 
@@ -208,6 +210,7 @@ export async function updateRef(token: string, owner: string, repo: string, ref:
 		throw new Error(`update ref failed: 422 ${message}`.trim())
 	}
 	if (!res.ok) throw new Error(`update ref failed: ${res.status}`)
+	markPendingRedeploy()
 }
 
 export async function readTextFileFromRepo(token: string, owner: string, repo: string, path: string, ref: string): Promise<string | null> {

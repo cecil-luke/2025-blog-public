@@ -14,6 +14,7 @@ import MusicCardMobile from '@/components/music-card-mobile'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { SearchPaletteContainer } from '@/components/search-palette-container'
 import Live2DWidget from '@/components/live2d-widget'
+import { StaleClientRecovery } from '@/components/stale-client-recovery'
 import { Search } from 'lucide-react'
 
 export default function Layout({ children }: PropsWithChildren) {
@@ -31,6 +32,7 @@ export default function Layout({ children }: PropsWithChildren) {
 
 	return (
 		<>
+			<StaleClientRecovery />
 			<Toaster
 				position='bottom-right'
 				richColors
