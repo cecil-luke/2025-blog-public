@@ -63,6 +63,22 @@ export async function makeThumbFile(file: File, maxWidth = 600, quality = 0.8): 
 	return new File([blob], 'thumb.webp', { type: 'image/webp' })
 }
 
+/** 等线上静态文件可访问后再丢掉 blob 预览。部署和 CDN 刷新通常要几秒到几十秒。 */
+export function waitForPublicImage(url: string, attempts = 12, delayMs = 2500): Promise<boolean> {
+	return new Promise(resolve => {
+		const tryLoad = (n: number) => {
+			const img = new Image()
+			img.onload = () => resolve(true)
+			img.onerror = () => {
+				if (n >= attempts) resolve(false)
+				else setTimeout(() => tryLoad(n + 1), delayMs)
+			}
+			img.src = n === 0 ? url : `${url}${url.includes('?') ? '&' : '?'}retry=${n}`
+		}
+		tryLoad(0)
+	})
+}
+
 export async function hashFileSHA256(file: File): Promise<string> {
 	const buf = await file.arrayBuffer()
 	const digest = await crypto.subtle.digest('SHA-256', buf)

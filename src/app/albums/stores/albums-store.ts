@@ -5,11 +5,13 @@ import initialLibrary from '../library.json'
 import type { AlbumLibrary, AlbumPhoto, NamedAlbum } from '../types'
 import { cloneLibrary, uniqueSlug } from '../library-utils'
 import type { ImageItem } from '../../projects/components/image-upload-dialog'
+import { waitForPublicImage } from '@/lib/file-utils'
 
 type AlbumsState = {
 	library: AlbumLibrary
 	originalLibrary: AlbumLibrary
 	imageItems: Map<string, ImageItem>
+	previewById: Map<string, string>
 	isEditMode: boolean
 	setEditMode: (value: boolean) => void
 	addPhotos: (photos: AlbumPhoto[], items: Map<string, ImageItem>, albumIds?: string[]) => void
@@ -32,10 +34,19 @@ function revokeItems(items: Map<string, ImageItem>) {
 	}
 }
 
+export function photosWithPreview(photos: AlbumPhoto[], previewById: Map<string, string>): AlbumPhoto[] {
+	if (previewById.size === 0) return photos
+	return photos.map(photo => {
+		const preview = previewById.get(photo.id)
+		return preview ? { ...photo, url: preview } : photo
+	})
+}
+
 export const useAlbumsStore = create<AlbumsState>((set, get) => ({
 	library: cloneLibrary(emptyLibrary),
 	originalLibrary: cloneLibrary(emptyLibrary),
 	imageItems: new Map(),
+	previewById: new Map(),
 	isEditMode: false,
 	setEditMode: value => set({ isEditMode: value }),
 	addPhotos: (photos, items, albumIds) => {
@@ -64,11 +75,16 @@ export const useAlbumsStore = create<AlbumsState>((set, get) => ({
 	deletePhoto: id => {
 		const item = get().imageItems.get(id)
 		if (item?.type === 'file') URL.revokeObjectURL(item.previewUrl)
+		const preview = get().previewById.get(id)
+		if (preview) URL.revokeObjectURL(preview)
 		set(state => {
 			const nextItems = new Map(state.imageItems)
 			nextItems.delete(id)
+			const nextPreview = new Map(state.previewById)
+			nextPreview.delete(id)
 			return {
 				imageItems: nextItems,
+				previewById: nextPreview,
 				library: {
 					photos: state.library.photos.filter(photo => photo.id !== id),
 					albums: state.library.albums.map(album => ({
@@ -111,8 +127,7 @@ export const useAlbumsStore = create<AlbumsState>((set, get) => ({
 								...album,
 								title: patch.title.trim(),
 								description: patch.description?.trim() || undefined,
-								coverPhotoId:
-									patch.coverPhotoId && album.photoIds.includes(patch.coverPhotoId) ? patch.coverPhotoId : album.coverPhotoId
+								coverPhotoId: patch.coverPhotoId && album.photoIds.includes(patch.coverPhotoId) ? patch.coverPhotoId : album.coverPhotoId
 							}
 						: album
 				)
@@ -179,14 +194,31 @@ export const useAlbumsStore = create<AlbumsState>((set, get) => ({
 		})
 	},
 	markSaved: saved => {
-		const { imageItems } = get()
+		const { imageItems, previewById } = get()
+		const nextPreview = new Map(previewById)
+		for (const [id, item] of imageItems) {
+			if (item.type === 'file') nextPreview.set(id, item.previewUrl)
+		}
 		const next = cloneLibrary(saved)
 		set({
 			library: next,
 			originalLibrary: cloneLibrary(next),
 			imageItems: new Map(),
+			previewById: nextPreview,
 			isEditMode: false
 		})
-		revokeItems(imageItems)
+		for (const photo of next.photos) {
+			const blobUrl = nextPreview.get(photo.id)
+			if (!blobUrl || photo.url.startsWith('blob:')) continue
+			void waitForPublicImage(photo.url).then(ok => {
+				useAlbumsStore.setState(state => {
+					if (state.previewById.get(photo.id) !== blobUrl) return state
+					const previewById = new Map(state.previewById)
+					previewById.delete(photo.id)
+					return { previewById }
+				})
+				if (ok) URL.revokeObjectURL(blobUrl)
+			})
+		}
 	}
 }))

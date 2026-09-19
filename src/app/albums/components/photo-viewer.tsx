@@ -6,6 +6,7 @@ import { motion } from 'motion/react'
 import dayjs from 'dayjs'
 import type { AlbumPhoto } from '../types'
 import { preloadOriginal, thumbUrl } from './album-thumb'
+import { nextMediaFallback } from '@/lib/media-url'
 import { photoTime } from '../library-utils'
 
 const VIEW_PAD_X = 120
@@ -116,6 +117,7 @@ export function PhotoViewer({
 	const [box, setBox] = useState<{ w: number; h: number } | null>(null)
 	const [labelPos, setLabelPos] = useState<{ left: number; top: number } | null>(null)
 	const [thumbSrc, setThumbSrc] = useState(() => (photo ? thumbUrl(photo.url) : ''))
+	const [fullSrc, setFullSrc] = useState(() => photo?.url || '')
 	const [fullReady, setFullReady] = useState(false)
 	const [fullFailed, setFullFailed] = useState(false)
 	const [showLoading, setShowLoading] = useState(false)
@@ -160,6 +162,7 @@ export function PhotoViewer({
 		const switched = openedIdRef.current !== photo.id
 		openedIdRef.current = photo.id
 		setThumbSrc(thumbUrl(photo.url))
+		setFullSrc(photo.url)
 		setFullReady(false)
 		setFullFailed(false)
 		setShowLoading(false)
@@ -300,13 +303,14 @@ export function PhotoViewer({
 							applyRatio(img.naturalWidth, img.naturalHeight)
 						}}
 						onError={() => {
-							if (thumbSrc !== photo.url) setThumbSrc(photo.url)
+							const next = nextMediaFallback(thumbSrc, photo.url)
+							if (next && next !== thumbSrc) setThumbSrc(next)
 						}}
 						className='absolute inset-0 h-full w-full object-cover select-none'
 					/>
 					<img
 						ref={fullImgRef}
-						src={photo.url}
+						src={fullSrc}
 						alt={photo.caption || ''}
 						draggable={false}
 						decoding='async'
@@ -316,8 +320,12 @@ export function PhotoViewer({
 							applyRatio(img.naturalWidth, img.naturalHeight, true)
 							setFullReady(true)
 						}}
-						onError={() => setFullFailed(true)}
-						className={`absolute inset-0 h-full w-full object-cover select-none transition-opacity duration-300 ${fullReady ? 'opacity-100' : 'opacity-0'}`}
+						onError={() => {
+							const next = nextMediaFallback(fullSrc, photo.url)
+							if (next && next !== fullSrc) setFullSrc(next)
+							else setFullFailed(true)
+						}}
+						className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 select-none ${fullReady ? 'opacity-100' : 'opacity-0'}`}
 					/>
 					{showLoading && !fullReady && !fullFailed && (
 						<div className='pointer-events-none absolute inset-0 flex items-center justify-center'>
@@ -344,9 +352,7 @@ export function PhotoViewer({
 					data-album-caption
 					role='note'
 					className={`fixed cursor-grab rounded-md active:cursor-grabbing ${
-						isMobileView()
-							? 'w-max max-w-[min(220px,calc(100vw-24px))] p-3'
-							: `w-[200px] p-6 ${photo.caption ? 'min-h-[150px]' : ''}`
+						isMobileView() ? 'w-max max-w-[min(220px,calc(100vw-24px))] p-3' : `w-[200px] p-6 ${photo.caption ? 'min-h-[150px]' : ''}`
 					}`}>
 					{captionDate && <div className='mb-2 text-[15px] font-bold text-black'>{captionDate}</div>}
 					{photo.caption && <div className='max-h-64 overflow-y-auto text-sm text-black'>{photo.caption}</div>}

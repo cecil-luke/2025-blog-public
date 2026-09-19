@@ -1,4 +1,14 @@
-import { toBase64Utf8, getRef, createTree, createCommit, updateRef, createBlob, readTextFileFromRepo, type TreeItem } from '@/lib/github-client'
+import {
+	toBase64Utf8,
+	getRef,
+	createTree,
+	createCommit,
+	updateRef,
+	createBlob,
+	readTextFileFromRepo,
+	withGitFastForwardRetry,
+	type TreeItem
+} from '@/lib/github-client'
 import { fileToBase64NoPrefix, hashFileSHA256 } from '@/lib/file-utils'
 import { getAuthToken } from '@/lib/auth'
 import { GITHUB_CONFIG } from '@/consts'
@@ -29,6 +39,12 @@ function assertNoBlobMediaUrls(urls: string[]): void {
 }
 
 export async function pushAlbums(params: PushAlbumsParams): Promise<AlbumLibrary> {
+	return withGitFastForwardRetry(() => pushAlbumsOnce(params), {
+		onRetry: attempt => toast.info(`仓库刚有更新，正在重试保存（${attempt}/3）...`)
+	})
+}
+
+async function pushAlbumsOnce(params: PushAlbumsParams): Promise<AlbumLibrary> {
 	const { imageItems, onProgress } = params
 	const library = cloneLibrary(params.library)
 

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'motion/react'
-import { useAlbumsStore } from '../stores/albums-store'
+import { useAlbumsStore, photosWithPreview } from '../stores/albums-store'
 import { albumPhotos } from '../library-utils'
 import { AlbumsChrome } from '../components/albums-chrome'
 import { RecentsGrid } from '../components/recents-grid'
@@ -21,9 +21,9 @@ export default function Page() {
 		slug = rawSlug
 	}
 	const router = useRouter()
-	const { library, isEditMode, updateAlbum, deleteAlbum, removeFromAlbum, setCover, setAlbumPhotos } = useAlbumsStore()
+	const { library, previewById, isEditMode, updateAlbum, deleteAlbum, removeFromAlbum, setCover, setAlbumPhotos } = useAlbumsStore()
 	const album = library.albums.find(item => item.slug === slug)
-	const photos = useMemo(() => (album ? albumPhotos(album, library.photos) : []), [album, library.photos])
+	const photos = useMemo(() => (album ? photosWithPreview(albumPhotos(album, library.photos), previewById) : []), [album, library.photos, previewById])
 	const [viewerIndex, setViewerIndex] = useState<number | null>(null)
 	const [renameOpen, setRenameOpen] = useState(false)
 	const [membershipOpen, setMembershipOpen] = useState(false)
@@ -101,7 +101,7 @@ export default function Page() {
 			{membershipOpen && (
 				<MembershipDialog
 					album={album}
-					photos={library.photos}
+					photos={photosWithPreview(library.photos, previewById)}
 					onClose={() => setMembershipOpen(false)}
 					onSubmit={photoIds => {
 						setAlbumPhotos(album.id, photoIds)

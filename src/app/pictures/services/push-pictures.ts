@@ -1,4 +1,14 @@
-import { toBase64Utf8, getRef, createTree, createCommit, updateRef, createBlob, readTextFileFromRepo, type TreeItem } from '@/lib/github-client'
+import {
+	toBase64Utf8,
+	getRef,
+	createTree,
+	createCommit,
+	updateRef,
+	createBlob,
+	readTextFileFromRepo,
+	withGitFastForwardRetry,
+	type TreeItem
+} from '@/lib/github-client'
 import { fileToBase64NoPrefix, hashFileSHA256 } from '@/lib/file-utils'
 import { getAuthToken } from '@/lib/auth'
 import { GITHUB_CONFIG } from '@/consts'
@@ -31,6 +41,12 @@ function assertNoBlobMediaUrls(urls: string[]): void {
 }
 
 export async function pushPictures(params: PushPicturesParams): Promise<Picture[]> {
+	return withGitFastForwardRetry(() => pushPicturesOnce(params), {
+		onRetry: attempt => toast.info(`仓库刚有更新，正在重试保存（${attempt}/3）...`)
+	})
+}
+
+async function pushPicturesOnce(params: PushPicturesParams): Promise<Picture[]> {
 	const { pictures, imageItems } = params
 
 	const token = await getAuthToken()

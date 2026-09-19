@@ -7,6 +7,7 @@ import { Picture } from '../page'
 import { cn } from '@/lib/utils'
 import { useSize } from '@/hooks/use-size'
 import { thumbUrl } from './picture-thumb'
+import { nextMediaFallback } from '@/lib/media-url'
 
 interface RandomLayoutProps {
 	pictures: Picture[]
@@ -424,10 +425,10 @@ const FloatingImage = ({
 							}
 						}}
 						onError={() => {
-							// 缩略图缺失回退原图;原图也失败才推进链条,避免后面的图片被卡住
-							if (imgSrc !== url && !thumbFailedRef.current) {
-								thumbFailedRef.current = true
-								setImgSrc(url)
+							const next = nextMediaFallback(imgSrc, url)
+							if (next && next !== imgSrc) {
+								if (next === url) thumbFailedRef.current = true
+								setImgSrc(next)
 							} else if (sequencerIdRef.current !== null) {
 								sequencer.markLoaded(sequencerIdRef.current)
 							}
@@ -474,9 +475,7 @@ const FloatingImage = ({
 					}}
 					initial={{ opacity: 0, scale: 0.4 }}
 					animate={{ opacity: 1, scale: 1 }}>
-					{formatUploadedAt(uploadedAt) && (
-						<div className={cn('text-[15px] font-bold text-black', description && 'mb-2')}>{formatUploadedAt(uploadedAt)}</div>
-					)}
+					{formatUploadedAt(uploadedAt) && <div className={cn('text-[15px] font-bold text-black', description && 'mb-2')}>{formatUploadedAt(uploadedAt)}</div>}
 					{description && <div className='text-sm text-black'>{description}</div>}
 				</motion.div>
 			)}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { motion } from 'motion/react'
 import { toast } from 'sonner'
 import initialList from './list.json'
@@ -10,6 +10,7 @@ import UploadDialog from './components/upload-dialog'
 import { pushPictures } from './services/push-pictures'
 import { useAuthStore } from '@/hooks/use-auth'
 import { useConfigStore } from '@/app/(home)/stores/config-store'
+import { waitForPublicImage } from '@/lib/file-utils'
 import type { ImageItem } from '../projects/components/image-upload-dialog'
 
 export interface Picture {
@@ -20,6 +21,23 @@ export interface Picture {
 	images?: string[]
 }
 
+function applyPicturePreviews(list: Picture[], previews: Map<string, string>): Picture[] {
+	if (previews.size === 0) return list
+	return list.map(picture => ({
+		...picture,
+		image: picture.image ? previews.get(picture.image) || picture.image : picture.image,
+		images: picture.images?.map(url => previews.get(url) || url)
+	}))
+}
+
+function publicUrlForImageItem(pictures: Picture[], key: string): string | undefined {
+	const [groupId, indexStr] = key.split('::')
+	const picture = pictures.find(item => item.id === groupId)
+	const index = Number(indexStr) || 0
+	const urls = picture?.images && picture.images.length > 0 ? picture.images : picture?.image ? [picture.image] : []
+	return urls[index]
+}
+
 export default function Page() {
 	const [pictures, setPictures] = useState<Picture[]>(initialList as Picture[])
 	const [originalPictures, setOriginalPictures] = useState<Picture[]>(initialList as Picture[])
@@ -27,7 +45,10 @@ export default function Page() {
 	const [isSaving, setIsSaving] = useState(false)
 	const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
 	const [imageItems, setImageItems] = useState<Map<string, ImageItem>>(new Map())
+	const [previewByPublicUrl, setPreviewByPublicUrl] = useState<Map<string, string>>(new Map())
 	const keyInputRef = useRef<HTMLInputElement>(null)
+	const savingLockRef = useRef(false)
+	const displayPictures = useMemo(() => applyPicturePreviews(pictures, previewByPublicUrl), [pictures, previewByPublicUrl])
 	// 桌面端用串线墙、移动端沿用散落墙(与编辑按钮的 max-sm 断点一致)
 	const [isDesktop, setIsDesktop] = useState<boolean | null>(null)
 
@@ -184,6 +205,8 @@ export default function Page() {
 	}
 
 	const handleSave = async () => {
+		if (savingLockRef.current) return
+		savingLockRef.current = true
 		setIsSaving(true)
 
 		try {
@@ -192,18 +215,36 @@ export default function Page() {
 				imageItems
 			})
 
+			const nextPreviews = new Map(previewByPublicUrl)
+			for (const [key, item] of imageItems) {
+				if (item.type !== 'file') continue
+				const publicUrl = publicUrlForImageItem(updatedPictures, key)
+				if (publicUrl) nextPreviews.set(publicUrl, item.previewUrl)
+			}
+
 			setPictures(updatedPictures)
 			setOriginalPictures(updatedPictures)
-			for (const item of imageItems.values()) {
-				if (item.type === 'file') URL.revokeObjectURL(item.previewUrl)
-			}
+			setPreviewByPublicUrl(nextPreviews)
 			setImageItems(new Map())
 			setIsEditMode(false)
 			toast.success('保存成功！')
+
+			for (const [publicUrl, blobUrl] of nextPreviews) {
+				void waitForPublicImage(publicUrl).then(ok => {
+					setPreviewByPublicUrl(prev => {
+						if (prev.get(publicUrl) !== blobUrl) return prev
+						const next = new Map(prev)
+						next.delete(publicUrl)
+						return next
+					})
+					if (ok) URL.revokeObjectURL(blobUrl)
+				})
+			}
 		} catch (error: any) {
 			console.error('Failed to save:', error)
 			toast.error(`保存失败: ${error?.message || '未知错误'}`)
 		} finally {
+			savingLockRef.current = false
 			setIsSaving(false)
 		}
 	}
@@ -245,9 +286,9 @@ export default function Page() {
 			/>
 
 			{isDesktop === null ? null : isDesktop ? (
-				<StringWall pictures={pictures} isEditMode={isEditMode} onDeleteSingle={handleDeleteSingleImage} />
+				<StringWall pictures={displayPictures} isEditMode={isEditMode} onDeleteSingle={handleDeleteSingleImage} />
 			) : (
-				<RandomLayout pictures={pictures} isEditMode={isEditMode} onDeleteSingle={handleDeleteSingleImage} onDeleteGroup={handleDeleteGroup} />
+				<RandomLayout pictures={displayPictures} isEditMode={isEditMode} onDeleteSingle={handleDeleteSingleImage} onDeleteGroup={handleDeleteGroup} />
 			)}
 
 			{pictures.length === 0 && (

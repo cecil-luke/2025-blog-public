@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'motion/react'
-import { useAlbumsStore } from './stores/albums-store'
+import { useAlbumsStore, photosWithPreview } from './stores/albums-store'
 import { sortRecents, newPhotoId } from './library-utils'
 import { AlbumsChrome } from './components/albums-chrome'
 import { RecentsGrid } from './components/recents-grid'
@@ -27,8 +27,8 @@ function AlbumsHome() {
 	const router = useRouter()
 	const searchParams = useSearchParams()
 	const tab = searchParams.get('tab') === 'albums' ? 'albums' : 'recents'
-	const { library, isEditMode, addPhotos, deletePhoto, createAlbum, updateAlbum, deleteAlbum, setAlbumPhotos } = useAlbumsStore()
-	const photos = useMemo(() => sortRecents(library.photos), [library.photos])
+	const { library, previewById, isEditMode, addPhotos, deletePhoto, createAlbum, updateAlbum, deleteAlbum, setAlbumPhotos } = useAlbumsStore()
+	const photos = useMemo(() => photosWithPreview(sortRecents(library.photos), previewById), [library.photos, previewById])
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 	const [viewerIndex, setViewerIndex] = useState<number | null>(null)
 	const [uploadOpen, setUploadOpen] = useState(false)
@@ -133,7 +133,7 @@ function AlbumsHome() {
 				/>
 			) : (
 				<AlbumsShelf
-					library={library}
+					library={{ ...library, photos: photosWithPreview(library.photos, previewById) }}
 					isEditMode={isEditMode}
 					onOpenRecents={() => setTab('recents')}
 					onOpenAlbum={slug => router.push(`/albums/${slug}`)}
@@ -195,7 +195,7 @@ function AlbumsHome() {
 			{membershipAlbum && (
 				<MembershipDialog
 					album={selectedIds.size > 0 ? { ...membershipAlbum, photoIds: [...new Set([...membershipAlbum.photoIds, ...selectedIds])] } : membershipAlbum}
-					photos={library.photos}
+					photos={photosWithPreview(library.photos, previewById)}
 					onClose={() => setMembershipAlbumId(null)}
 					onSubmit={photoIds => {
 						setAlbumPhotos(membershipAlbum.id, photoIds)

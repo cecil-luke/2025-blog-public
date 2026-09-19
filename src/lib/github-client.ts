@@ -98,12 +98,41 @@ export async function putFile(token: string, owner: string, repo: string, path: 
 
 // Batch commit APIs
 
+export class GitFastForwardError extends Error {
+	constructor(message = 'Update is not a fast forward') {
+		super(message)
+		this.name = 'GitFastForwardError'
+	}
+}
+
+export function isGitFastForwardError(error: unknown): boolean {
+	return error instanceof GitFastForwardError
+}
+
+export async function withGitFastForwardRetry<T>(run: () => Promise<T>, options?: { retries?: number; onRetry?: (attempt: number) => void }): Promise<T> {
+	const retries = options?.retries ?? 3
+	let lastError: unknown
+	for (let attempt = 1; attempt <= retries; attempt++) {
+		try {
+			return await run()
+		} catch (error) {
+			lastError = error
+			if (!isGitFastForwardError(error) || attempt === retries) throw error
+			options?.onRetry?.(attempt + 1)
+			await new Promise(resolve => setTimeout(resolve, 400 * attempt))
+		}
+	}
+	throw lastError
+}
+
 export async function getRef(token: string, owner: string, repo: string, ref: string): Promise<{ sha: string }> {
 	const res = await fetch(`${GH_API}/repos/${owner}/${repo}/git/ref/${encodeURIComponent(ref)}`, {
+		cache: 'no-store',
 		headers: {
 			Authorization: `Bearer ${token}`,
 			Accept: 'application/vnd.github+json',
-			'X-GitHub-Api-Version': '2022-11-28'
+			'X-GitHub-Api-Version': '2022-11-28',
+			'Cache-Control': 'no-cache'
 		}
 	})
 	if (res.status === 401) handle401Error()
@@ -169,16 +198,26 @@ export async function updateRef(token: string, owner: string, repo: string, ref:
 		body: JSON.stringify({ sha, force })
 	})
 	if (res.status === 401) handle401Error()
-	if (res.status === 422) handle422Error()
+	if (res.status === 422) {
+		const body = await res.json().catch(() => null)
+		const message = body && typeof body === 'object' && 'message' in body ? String((body as { message?: string }).message || '') : ''
+		if (message.toLowerCase().includes('fast forward')) {
+			throw new GitFastForwardError(message)
+		}
+		handle422Error()
+		throw new Error(`update ref failed: 422 ${message}`.trim())
+	}
 	if (!res.ok) throw new Error(`update ref failed: ${res.status}`)
 }
 
 export async function readTextFileFromRepo(token: string, owner: string, repo: string, path: string, ref: string): Promise<string | null> {
 	const res = await fetch(`${GH_API}/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}?ref=${encodeURIComponent(ref)}`, {
+		cache: 'no-store',
 		headers: {
 			Authorization: `Bearer ${token}`,
 			Accept: 'application/vnd.github+json',
-			'X-GitHub-Api-Version': '2022-11-28'
+			'X-GitHub-Api-Version': '2022-11-28',
+			'Cache-Control': 'no-cache'
 		}
 	})
 	if (res.status === 401) handle401Error()

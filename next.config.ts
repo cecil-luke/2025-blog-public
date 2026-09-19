@@ -49,6 +49,15 @@ const nextConfig: NextConfig = {
 				permanent: true
 			}
 		]
+	},
+
+	async headers() {
+		return [
+			{
+				source: '/_not-found',
+				headers: [{ key: 'Cache-Control', value: 'private, no-store, max-age=0, must-revalidate' }]
+			}
+		]
 	}
 }
 

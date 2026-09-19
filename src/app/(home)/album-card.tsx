@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { HomeDraggableLayer } from './home-draggable-layer'
 import { useAlbumsStore } from '@/app/albums/stores/albums-store'
 import { sortRecents } from '@/app/albums/library-utils'
-import { thumbUrl } from '@/app/albums/components/album-thumb'
+import { AlbumThumb } from '@/app/albums/components/album-thumb-img'
 import { cn } from '@/lib/utils'
 
 const HOVER_SHIFT = [
@@ -47,18 +47,7 @@ export default function AlbumCard() {
 								<div
 									key={photo?.id ?? `empty-${index}`}
 									className={cn('overflow-hidden rounded-2xl bg-white/35 transition-transform duration-300 ease-out', HOVER_SHIFT[index])}>
-									{photo ? (
-										<img
-											src={thumbUrl(photo.url)}
-											alt=''
-											loading='lazy'
-											decoding='async'
-											onError={event => {
-												if (event.currentTarget.src !== photo.url) event.currentTarget.src = photo.url
-											}}
-											className='h-full w-full object-cover'
-										/>
-									) : null}
+									{photo ? <AlbumThumb url={photo.url} className='h-full w-full object-cover' /> : null}
 								</div>
 							)
 						})}

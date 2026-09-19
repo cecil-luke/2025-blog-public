@@ -37,6 +37,7 @@ export function AlbumsChrome({
 	const hideEditButton = siteContent.hideEditButton ?? false
 	const { isEditMode, setEditMode, library, imageItems, cancelEdits, markSaved } = useAlbumsStore()
 	const [saveProgress, setSaveProgress] = useState<{ message: string; current: number; total: number } | null>(null)
+	const savingLockRef = useRef(false)
 
 	const handleChoosePrivateKey = async (file: File) => {
 		try {
@@ -50,6 +51,8 @@ export function AlbumsChrome({
 	}
 
 	const handleSave = async () => {
+		if (savingLockRef.current) return
+		savingLockRef.current = true
 		setIsSaving(true)
 		setSaveProgress({ message: '准备保存...', current: 0, total: 1 })
 		try {
@@ -64,6 +67,7 @@ export function AlbumsChrome({
 			console.error('Failed to save:', error)
 			toast.error(`保存失败: ${error?.message || '未知错误'}`)
 		} finally {
+			savingLockRef.current = false
 			setIsSaving(false)
 			setSaveProgress(null)
 		}

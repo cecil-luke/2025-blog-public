@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import type { Picture } from '../page'
 import { thumbUrl } from './picture-thumb'
+import { nextMediaFallback } from '@/lib/media-url'
 
 // 串线照片墙 · 图床桌面端实现(≥640px 视口;移动端仍用散落墙 random-layout)
 // 参数固定为推荐默认值(300ms/130px/52px);SVG 与墙容器不拦截指针事件,
@@ -359,10 +360,10 @@ function PhotoCell({
 						if (idRef.current !== null) queue.markLoaded(idRef.current)
 					}}
 					onError={() => {
-						// 缩略图缺失回退原图;原图也失败才推进链条
-						if (imgSrc !== item.url && !thumbFailedRef.current) {
-							thumbFailedRef.current = true
-							setImgSrc(item.url)
+						const next = nextMediaFallback(imgSrc, item.url)
+						if (next && next !== imgSrc) {
+							if (next === item.url) thumbFailedRef.current = true
+							setImgSrc(next)
 						} else if (idRef.current !== null) {
 							queue.markLoaded(idRef.current)
 						}
@@ -426,6 +427,7 @@ function PhotoZoom({
 		return ratio ? fitZoomBox(ratio) : null
 	})
 	const [thumbSrc, setThumbSrc] = useState(() => thumbUrl(item.url))
+	const [fullSrc, setFullSrc] = useState(() => item.url)
 	const [fullReady, setFullReady] = useState(false)
 	const [showLoading, setShowLoading] = useState(false)
 	const [fullFailed, setFullFailed] = useState(false)
@@ -462,6 +464,13 @@ function PhotoZoom({
 		window.addEventListener('keydown', onKey)
 		return () => window.removeEventListener('keydown', onKey)
 	}, [close, onPrev, onNext])
+
+	useEffect(() => {
+		setThumbSrc(thumbUrl(item.url))
+		setFullSrc(item.url)
+		setFullReady(false)
+		setFullFailed(false)
+	}, [item.url])
 
 	useEffect(() => {
 		void preloadOriginal(item.url, 'high')
@@ -546,14 +555,15 @@ function PhotoZoom({
 						applyRatio(img.naturalWidth, img.naturalHeight)
 					}}
 					onError={() => {
-						if (thumbSrc !== item.url) setThumbSrc(item.url)
+						const next = nextMediaFallback(thumbSrc, item.url)
+						if (next && next !== thumbSrc) setThumbSrc(next)
 					}}
 					className='absolute inset-0 h-full w-full object-cover select-none'
 				/>
 				<img
 					ref={fullImgRef}
 					data-zoom-img
-					src={item.url}
+					src={fullSrc}
 					alt=''
 					draggable={false}
 					decoding='async'
@@ -563,8 +573,12 @@ function PhotoZoom({
 						applyRatio(img.naturalWidth, img.naturalHeight, true)
 						setFullReady(true)
 					}}
-					onError={() => setFullFailed(true)}
-					className={`absolute inset-0 h-full w-full object-cover select-none transition-opacity duration-300 ${fullReady ? 'opacity-100' : 'opacity-0'}`}
+					onError={() => {
+						const next = nextMediaFallback(fullSrc, item.url)
+						if (next && next !== fullSrc) setFullSrc(next)
+						else setFullFailed(true)
+					}}
+					className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 select-none ${fullReady ? 'opacity-100' : 'opacity-0'}`}
 				/>
 				{showLoading && !fullReady && !fullFailed && (
 					<div className='pointer-events-none absolute inset-0 flex items-center justify-center'>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { thumbUrl } from './album-thumb'
+import { nextMediaFallback } from '@/lib/media-url'
 
 export function AlbumThumb({
 	url,
@@ -31,7 +32,8 @@ export function AlbumThumb({
 			draggable={draggable}
 			onLoad={onLoad}
 			onError={() => {
-				if (src !== url) setSrc(url)
+				const next = nextMediaFallback(src, url)
+				if (next && next !== src) setSrc(next)
 			}}
 			className={className}
 		/>
