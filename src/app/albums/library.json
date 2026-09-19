@@ -1,6 +1,48 @@
 {
 	"photos": [
 		{
+			"id": "1789823092583-b1e4943bbc42e8",
+			"url": "/images/albums/ba64fadcd2967c30.webp",
+			"uploadedAt": "2026-09-19T13:04:52.583Z",
+			"takenAt": "2026-09-20T13:04:00.000Z"
+		},
+		{
+			"id": "1789823092583-77635f74087958",
+			"url": "/images/albums/b50e2e359fbbaee3.webp",
+			"uploadedAt": "2026-09-19T13:04:52.583Z",
+			"takenAt": "2026-09-20T13:04:00.000Z"
+		},
+		{
+			"id": "1789823092583-a8acb0cded9f8",
+			"url": "/images/albums/b2f1bb24d7a3d8c0.webp",
+			"uploadedAt": "2026-09-19T13:04:52.583Z",
+			"takenAt": "2026-09-20T13:04:00.000Z"
+		},
+		{
+			"id": "1789823092583-4b4d8df1ca06a8",
+			"url": "/images/albums/a722787e73dc6ee7.webp",
+			"uploadedAt": "2026-09-19T13:04:52.583Z",
+			"takenAt": "2026-09-20T13:04:00.000Z"
+		},
+		{
+			"id": "1789823092583-49978a65360c38",
+			"url": "/images/albums/7bea08eaf66cbe90.webp",
+			"uploadedAt": "2026-09-19T13:04:52.583Z",
+			"takenAt": "2026-09-20T13:04:00.000Z"
+		},
+		{
+			"id": "1789823092583-1692d5b48a41a8",
+			"url": "/images/albums/13edc03007edb475.webp",
+			"uploadedAt": "2026-09-19T13:04:52.583Z",
+			"takenAt": "2026-09-20T13:04:00.000Z"
+		},
+		{
+			"id": "1789823092583-7f960ceae32a",
+			"url": "/images/albums/f62ae7fc93e79e59.webp",
+			"uploadedAt": "2026-09-19T13:04:52.583Z",
+			"takenAt": "2026-09-20T13:04:00.000Z"
+		},
+		{
 			"id": "1789822818229-88a42b021e3668",
 			"url": "/images/albums/0a0f95028ae9242a.webp",
 			"uploadedAt": "2026-09-19T13:00:18.229Z"
