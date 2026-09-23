@@ -352,11 +352,12 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 					if (!match) return
 					return { type: 'footnoteDef', raw: match[0], id: match[1], text: match[2].trim() }
 				},
-				renderer(token: { id: string; text: string; __fnSlug?: string; __fnBack?: string }) {
-					const slug = token.__fnSlug || footnoteSlug(token.id)
-					const back = token.__fnBack || slug
-					const body = instance.parseInline(token.text) as string
-					return renderFootnoteDefHtml(token.id, body, slug, back)
+				renderer(token: Tokens.Generic) {
+					const id = String(token.id ?? '')
+					const slug = String(token.__fnSlug || footnoteSlug(id))
+					const back = String(token.__fnBack || slug)
+					const body = instance.parseInline(String(token.text ?? '')) as string
+					return renderFootnoteDefHtml(id, body, slug, back)
 				}
 			},
 			{
@@ -374,8 +375,8 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 						text: match[1].trim()
 					}
 				},
-				renderer(token: { text: string }) {
-					return `${renderMath(token.text || '', true)}\n`
+				renderer(token: Tokens.Generic) {
+					return `${renderMath(String(token.text ?? ''), true)}\n`
 				}
 			},
 			{
@@ -389,8 +390,8 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 					if (!match) return
 					return { type: 'highlight', raw: match[0], text: match[1] }
 				},
-				renderer(token: { text: string }) {
-					return `<mark>${instance.parseInline(token.text)}</mark>`
+				renderer(token: Tokens.Generic) {
+					return `<mark>${instance.parseInline(String(token.text ?? ''))}</mark>`
 				}
 			},
 			{
@@ -405,8 +406,8 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 					if (!match) return
 					return { type: 'superscript', raw: match[0], text: match[1] }
 				},
-				renderer(token: { text: string }) {
-					return `<sup>${instance.parseInline(token.text)}</sup>`
+				renderer(token: Tokens.Generic) {
+					return `<sup>${instance.parseInline(String(token.text ?? ''))}</sup>`
 				}
 			},
 			{
@@ -421,8 +422,8 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 					if (!match) return
 					return { type: 'subscript', raw: match[0], text: match[1].replace(/\\ /g, ' ') }
 				},
-				renderer(token: { text: string }) {
-					return `<sub>${escapeHtml(token.text)}</sub>`
+				renderer(token: Tokens.Generic) {
+					return `<sub>${escapeHtml(String(token.text ?? ''))}</sub>`
 				}
 			},
 			{
@@ -437,10 +438,11 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 					if (!match) return
 					return { type: 'footnoteRef', raw: match[0], id: match[1] }
 				},
-				renderer(token: { id: string; __fnSlug?: string; __fnTarget?: string }) {
-					const slug = token.__fnSlug || footnoteSlug(token.id)
-					const target = token.__fnTarget || slug
-					return `<sup class="footnote-ref"><a href="#fn-${target}" id="fnref-${slug}">${escapeHtml(token.id)}</a></sup>`
+				renderer(token: Tokens.Generic) {
+					const id = String(token.id ?? '')
+					const slug = String(token.__fnSlug || footnoteSlug(id))
+					const target = String(token.__fnTarget || slug)
+					return `<sup class="footnote-ref"><a href="#fn-${target}" id="fnref-${slug}">${escapeHtml(id)}</a></sup>`
 				}
 			},
 			{
@@ -466,8 +468,8 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 						text: inner.trim()
 					}
 				},
-				renderer(token: { text: string }) {
-					return renderMath(token.text || '', false)
+				renderer(token: Tokens.Generic) {
+					return renderMath(String(token.text ?? ''), false)
 				}
 			}
 		]
