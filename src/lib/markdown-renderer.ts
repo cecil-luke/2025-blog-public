@@ -1,4 +1,4 @@
-import { marked } from 'marked'
+import { Marked, Renderer } from 'marked'
 import type { Tokens } from 'marked'
 
 export type TocItem = { id: string; text: string; level: number }
@@ -6,6 +6,7 @@ export type TocItem = { id: string; text: string; level: number }
 export interface CodeBlockData {
 	code: string
 	html: string
+	lang?: string
 }
 
 export interface MarkdownRenderResult {
@@ -89,7 +90,8 @@ const SHIKI_LANGS = [
 	'yaml',
 	'yml',
 	'diff',
-	'plaintext'
+	'plaintext',
+	'matlab'
 ]
 
 interface ShikiHighlighter {
@@ -140,6 +142,111 @@ function escapeHtml(value: string): string {
 	return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 }
 
+/** Drop YAML fences (including after a heading) so `---` is not a setext underline. */
+export function stripFrontMatter(markdown: string): string {
+	return markdown.replace(/^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*\r?\n?/gm, (full, body: string) => {
+		return /^[A-Za-z0-9_-]+:[ \t]?\S/m.test(body) ? '\n' : full
+	})
+}
+
+function footnoteSlug(id: string): string {
+	return slugify(id) || id
+}
+
+type FootnoteMetaToken = {
+	type: string
+	id?: string
+	tag?: string
+	href?: string
+	title?: string | null
+	text?: string
+	__fnSlug?: string
+	__fnTarget?: string
+	__fnBack?: string
+	tokens?: unknown[]
+}
+
+function isFootnoteDefToken(token: FootnoteMetaToken): boolean {
+	return token.type === 'footnoteDef' || (token.type === 'def' && Boolean(token.tag?.startsWith('^')))
+}
+
+function footnoteDefId(token: FootnoteMetaToken): string {
+	if (token.type === 'footnoteDef' && token.id) return token.id
+	return (token.tag || '').replace(/^\^/, '')
+}
+
+function footnoteOccurrenceSlug(id: string, index: number): string {
+	const base = footnoteSlug(id)
+	return index === 0 ? base : `${base}-${index + 1}`
+}
+
+/** Pair duplicate `[^n]` refs/defs in document order so the first citation is not overwritten. */
+function assignFootnoteMeta(tokenList: FootnoteMetaToken[]) {
+	const defsById = new Map<string, FootnoteMetaToken[]>()
+	const refsById = new Map<string, FootnoteMetaToken[]>()
+
+	function walk(node: unknown) {
+		if (!node) return
+		if (Array.isArray(node)) {
+			for (const item of node) walk(item)
+			return
+		}
+		if (typeof node !== 'object') return
+
+		const token = node as FootnoteMetaToken & { items?: unknown[] }
+		if (isFootnoteDefToken(token)) {
+			const id = footnoteDefId(token)
+			const defs = defsById.get(id) ?? []
+			defs.push(token)
+			defsById.set(id, defs)
+		} else if (token.type === 'footnoteRef' && token.id) {
+			const refs = refsById.get(token.id) ?? []
+			refs.push(token)
+			refsById.set(token.id, refs)
+		}
+
+		if (token.tokens) walk(token.tokens)
+		if (token.items) walk(token.items)
+	}
+
+	walk(tokenList)
+
+	for (const [id, defs] of defsById) {
+		defs.forEach((token, index) => {
+			token.__fnSlug = footnoteOccurrenceSlug(id, index)
+		})
+	}
+
+	for (const [id, refs] of refsById) {
+		const defs = defsById.get(id) ?? []
+		refs.forEach((token, index) => {
+			token.__fnSlug = footnoteOccurrenceSlug(id, index)
+			const paired = defs[Math.min(index, Math.max(defs.length - 1, 0))]
+			token.__fnTarget = paired?.__fnSlug || token.__fnSlug
+		})
+	}
+
+	for (const [id, defs] of defsById) {
+		const refs = refsById.get(id) ?? []
+		defs.forEach((token, index) => {
+			const paired = refs[Math.min(index, Math.max(refs.length - 1, 0))]
+			token.__fnBack = paired?.__fnSlug || token.__fnSlug
+		})
+	}
+}
+
+function renderFootnoteDefHtml(id: string, body: string, slug: string, backSlug: string): string {
+	return `<p class="footnote-def" id="fn-${slug}"><a class="footnote-label" href="#fnref-${backSlug}">[${escapeHtml(id)}]</a>: ${body} <a class="footnote-back" href="#fnref-${backSlug}" aria-label="返回正文">↩</a></p>\n`
+}
+
+function buildTocHtml(toc: TocItem[]): string {
+	if (toc.length === 0) return ''
+	const items = toc
+		.map(item => `<li class="toc-l${item.level}"><a href="#${item.id}">${escapeHtml(item.text)}</a></li>`)
+		.join('')
+	return `<nav class="article-toc" aria-label="文章目录"><p class="article-toc-title">目录</p><ul>${items}</ul></nav>\n`
+}
+
 // 渲染结果缓存：同内容不重复走 lexer/shiki/katex（编辑预览与文章页共用此链路）
 const RENDER_CACHE_LIMIT = 40
 const renderCache = new Map<string, MarkdownRenderResult>()
@@ -148,43 +255,37 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 	const cached = renderCache.get(markdown)
 	if (cached) return cached
 
+	const source = stripFrontMatter(markdown)
+
 	// 按需加载：无代码块时不加载 shiki，无 $ 符号时不加载 katex
-	const hasCodeFence = /\`\`\`|~~~/.test(markdown)
-	const hasMathDollar = markdown.includes('$')
+	const hasCodeFence = /\`\`\`|~~~/.test(source)
+	const hasMathDollar = source.includes('$')
 
 	const codeBlockMap = new Map<string, { html: string; original: string; index: number }>()
 	const codeBlocks: CodeBlockData[] = []
+	const toc: TocItem[] = []
 	const [shiki, katex] = await Promise.all([hasCodeFence ? loadShiki() : Promise.resolve(null), hasMathDollar ? loadKatex() : Promise.resolve(null)])
 
-	// Render HTML with heading ids
-	const renderer = new marked.Renderer()
+	const renderer = new Renderer()
+	const instance = new Marked({ gfm: true })
 
 	renderer.heading = (token: Tokens.Heading) => {
-		// Id is pre-generated by extractHeadings and stashed on the token
-		// to keep HTML ids and TOC ids in sync (including dedup suffixes).
-		const id = (token as any).__tocId as string
+		const id = ((token as Tokens.Heading & { __tocId?: string }).__tocId as string) || slugify(token.text)
 		return `<h${token.depth} id="${id}">${token.text}</h${token.depth}>`
 	}
 
 	renderer.code = (token: Tokens.Code) => {
-		// Check if this code block was pre-processed
 		const codeData = codeBlockMap.get(token.text)
 		if (codeData) {
-			// 输出 data-code-index 占位，代码本体与高亮 HTML 放在 codeBlocks 数组中返回，
-			// 避免把整段代码塞进 HTML 属性再转义/反转义（原实现易出错且慢）
 			return `<pre data-code-index="${codeData.index}">${codeData.html}</pre>`
 		}
-		// Fallback to default (inline code, not code block)
 		return `<code>${escapeHtml(token.text)}</code>`
 	}
 
 	renderer.listitem = (token: Tokens.ListItem) => {
-		// Render inline markdown inside list items (e.g. links, emphasis)
-		let inner = token.text
-		let tokens = token.tokens
-
+		let tokens = token.tokens ?? []
 		if (token.task) tokens = tokens.slice(1)
-		inner = marked.parser(tokens) as string
+		const inner = tokens.length ? (instance.parser(tokens) as string) : token.text
 
 		if (token.task) {
 			const checkbox = token.checked ? '<input type="checkbox" checked disabled />' : '<input type="checkbox" disabled />'
@@ -194,9 +295,17 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 		return `<li>${inner}</li>\n`
 	}
 
+	renderer.def = (token: Tokens.Def) => {
+		if (!token.tag.startsWith('^')) return ''
+		const id = token.tag.slice(1)
+		const slug = (token as Tokens.Def & { __fnSlug?: string }).__fnSlug || footnoteSlug(id)
+		const back = (token as Tokens.Def & { __fnBack?: string }).__fnBack || slug
+		const body = instance.parseInline([token.href, token.title].filter(Boolean).join(' ')) as string
+		return renderFootnoteDefHtml(id, body, slug, back)
+	}
+
 	const renderMath = (content: string, displayMode: boolean) => {
 		if (!katex) {
-			// Keep original delimiters if katex is not available
 			return displayMode ? `$$${content}$$` : `$${content}$`
 		}
 
@@ -212,11 +321,44 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 		}
 	}
 
-	// Register extensions BEFORE lexing so math gets tokenized on cold refresh.
-	marked.use({
+	instance.use({
 		renderer,
 		extensions: [
-			// Block math: $$ ... $$
+			{
+				name: 'tocPlaceholder',
+				level: 'block',
+				start(src: string) {
+					const match = src.match(/^\s*\[TOC\]/im)
+					return match ? src.indexOf(match[0]) : undefined
+				},
+				tokenizer(src: string) {
+					const match = src.match(/^\[TOC\][ \t]*(?:\n|$)/i)
+					if (!match) return
+					return { type: 'tocPlaceholder', raw: match[0] }
+				},
+				renderer() {
+					return buildTocHtml(toc)
+				}
+			},
+			{
+				name: 'footnoteDef',
+				level: 'block',
+				start(src: string) {
+					const idx = src.search(/^\[\^[^\]]+\]:/m)
+					return idx === -1 ? undefined : idx
+				},
+				tokenizer(src: string) {
+					const match = src.match(/^\[\^([^\]]+)\]:[ \t]*([^\n]*(?:\n[ \t]+[^\n]*)*)(?:\n|$)/)
+					if (!match) return
+					return { type: 'footnoteDef', raw: match[0], id: match[1], text: match[2].trim() }
+				},
+				renderer(token: { id: string; text: string; __fnSlug?: string; __fnBack?: string }) {
+					const slug = token.__fnSlug || footnoteSlug(token.id)
+					const back = token.__fnBack || slug
+					const body = instance.parseInline(token.text) as string
+					return renderFootnoteDefHtml(token.id, body, slug, back)
+				}
+			},
 			{
 				name: 'mathBlock',
 				level: 'block',
@@ -230,13 +372,77 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 						type: 'mathBlock',
 						raw: match[0],
 						text: match[1].trim()
-					} as any
+					}
 				},
-				renderer(token: any) {
+				renderer(token: { text: string }) {
 					return `${renderMath(token.text || '', true)}\n`
 				}
 			},
-			// Inline math: $ ... $
+			{
+				name: 'highlight',
+				level: 'inline',
+				start(src: string) {
+					return src.indexOf('==')
+				},
+				tokenizer(src: string) {
+					const match = src.match(/^==([^=\n]+?)==/)
+					if (!match) return
+					return { type: 'highlight', raw: match[0], text: match[1] }
+				},
+				renderer(token: { text: string }) {
+					return `<mark>${instance.parseInline(token.text)}</mark>`
+				}
+			},
+			{
+				name: 'superscript',
+				level: 'inline',
+				start(src: string) {
+					return src.indexOf('^')
+				},
+				tokenizer(src: string) {
+					if (src.startsWith('^^')) return
+					const match = src.match(/^\^(\[[^\]]+\]|[^\s^]+)\^/)
+					if (!match) return
+					return { type: 'superscript', raw: match[0], text: match[1] }
+				},
+				renderer(token: { text: string }) {
+					return `<sup>${instance.parseInline(token.text)}</sup>`
+				}
+			},
+			{
+				name: 'subscript',
+				level: 'inline',
+				start(src: string) {
+					return src.indexOf('~')
+				},
+				tokenizer(src: string) {
+					if (src.startsWith('~~')) return
+					const match = src.match(/^~((?:[^~\n]|\\ )+)~/)
+					if (!match) return
+					return { type: 'subscript', raw: match[0], text: match[1].replace(/\\ /g, ' ') }
+				},
+				renderer(token: { text: string }) {
+					return `<sub>${escapeHtml(token.text)}</sub>`
+				}
+			},
+			{
+				name: 'footnoteRef',
+				level: 'inline',
+				start(src: string) {
+					return src.indexOf('[^')
+				},
+				tokenizer(src: string) {
+					if (src.startsWith('[^') && src.includes(']:')) return
+					const match = src.match(/^\[\^([^\]]+)\](?!:)/)
+					if (!match) return
+					return { type: 'footnoteRef', raw: match[0], id: match[1] }
+				},
+				renderer(token: { id: string; __fnSlug?: string; __fnTarget?: string }) {
+					const slug = token.__fnSlug || footnoteSlug(token.id)
+					const target = token.__fnTarget || slug
+					return `<sup class="footnote-ref"><a href="#fn-${target}" id="fnref-${slug}">${escapeHtml(token.id)}</a></sup>`
+				}
+			},
 			{
 				name: 'mathInline',
 				level: 'inline',
@@ -245,7 +451,6 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 					return idx === -1 ? undefined : idx
 				},
 				tokenizer(src: string) {
-					// Avoid $$ (block) and escaped dollars
 					if (src.startsWith('$$')) return
 					if (src.startsWith('\\$')) return
 
@@ -253,49 +458,40 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 					if (!match) return
 
 					const inner = match[1]
-					// Heuristic: require some non-space content
 					if (!inner || !inner.trim()) return
 
 					return {
 						type: 'mathInline',
 						raw: match[0],
 						text: inner.trim()
-					} as any
+					}
 				},
-				renderer(token: any) {
+				renderer(token: { text: string }) {
 					return renderMath(token.text || '', false)
 				}
 			}
 		]
 	})
 
-	// Pre-process with marked lexer first (after extensions are registered)
-	const tokens = marked.lexer(markdown)
+	const tokens = instance.lexer(source)
 
-	// Extract TOC from parsed tokens (this correctly skips code blocks).
-	// usedIds ensures duplicate heading text gets unique ids (-1, -2, ...).
-	const toc: TocItem[] = []
 	const usedIds = new Set<string>()
 	function extractHeadings(tokenList: typeof tokens) {
 		for (const token of tokenList) {
-			if (token.type === 'heading' && token.depth <= 3) {
-				// Use the parsed text (markdown syntax like links/code already stripped)
+			if (token.type === 'heading') {
 				const text = token.text
-				// Generate a unique id (dedup with -1, -2, ... suffixes) and stash
-				// it on the token so the heading renderer can read it later.
 				const id = slugifyUnique(text, usedIds)
-				;(token as any).__tocId = id
+				;(token as Tokens.Heading & { __tocId?: string }).__tocId = id
 				toc.push({ id, text, level: token.depth })
 			}
-			// Recursively check nested tokens (e.g., in blockquotes, lists)
 			if ('tokens' in token && token.tokens) {
 				extractHeadings(token.tokens as typeof tokens)
 			}
 		}
 	}
 	extractHeadings(tokens)
+	assignFootnoteMeta(tokens as FootnoteMetaToken[])
 
-	// Pre-process code blocks with Shiki
 	for (const token of tokens) {
 		if (token.type === 'code') {
 			const codeToken = token as Tokens.Code
@@ -305,28 +501,26 @@ export async function renderMarkdown(markdown: string): Promise<MarkdownRenderRe
 
 			if (shiki) {
 				try {
-					// 'svg' 不在白名单中，映射到语法相近的 'xml' 避免整体降级
 					const lang = codeToken.lang === 'svg' ? 'xml' : codeToken.lang || 'text'
 					html = await shiki.codeToHtml(originalCode, {
 						lang,
 						theme: 'one-light'
 					})
 				} catch {
-					// Keep original if highlighting fails (e.g. 语言不在白名单)
 					html = ''
 				}
 			}
-			// Fallback when shiki is not available or highlighting failed
 			if (!html) {
-				html = `<code>${escapeHtml(originalCode)}</code>`
+				html = `<pre><code>${escapeHtml(originalCode)}</code></pre>`
 			}
-			codeBlocks.push({ code: originalCode, html })
+			codeBlocks.push({ code: originalCode, html, lang: codeToken.lang || undefined })
 			codeBlockMap.set(`__SHIKI_CODE_${index}__`, { html, original: originalCode, index })
 			codeToken.text = `__SHIKI_CODE_${index}__`
 		}
 	}
-	const html = (marked.parser(tokens) as string) || ''
-	const { wordCount, readingMinutes } = getReadingStats(markdown)
+
+	const html = (instance.parser(tokens) as string) || ''
+	const { wordCount, readingMinutes } = getReadingStats(source)
 
 	const result: MarkdownRenderResult = { html, toc, codeBlocks, wordCount, readingMinutes }
 	if (renderCache.size >= RENDER_CACHE_LIMIT) {
